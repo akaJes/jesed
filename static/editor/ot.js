@@ -18,13 +18,13 @@ ace.define("ot", function(require, exports, module) {
             manager[s].socket.emit('name', name)
           }
         }
-        socket.on('ns', function(dir) {
+        socket.on('ns', function(dir, type) {
           var ss = manager[dir];
           var s = ss.socket = io.connect(dir, {path: '/ws'});
           var cli = ss.ot = new ot.Client(0);
           var session = ss.session;
           ss.dc = debounce(scan, 1000);
-		  function onChange(obj) {
+          function onChange(obj) {
             state('typing...')
             ss.dc(ss);
             var doc = session.doc;
@@ -152,11 +152,11 @@ ace.define("ot", function(require, exports, module) {
         }
         function scan(ss) {
           var session = ss.session;
-          if (session.otDoc && session.getValue()) {
+          if (1 || session.otDoc && session.getValue()) {
             var d = dmp.diff_main(session.otDoc, session.getValue());
             //dmp.diff_cleanupSemantic(d); //semantic //TODO: add mode
             dmp.diff_cleanupEfficiency(d); //efficiency
-            if (d.length == 1) return;
+            if (d.length == 1 && d[0][0] == 0) return;
             var op  = new ot.TextOperation();
           d.filter(function(i) { return i[1].length; })
           .map(function(i, n, o) {

@@ -4,14 +4,16 @@ const {promisify} = require('./helpers');
 
 var root;
 
+const getFirst = text => text.split(/\r\n?|\n/)[0]
 const gitRoot = (dir) =>
-  promisify('revparse', git(dir))(['--show-toplevel'])
-  .then(str => str.replace(/\r|\n/, ''))
+  promisify(git(dir).revparse, git(dir))(['--show-toplevel'])
+  .then(getFirst)
   .then(str => (console.log('[gitRoot]', str), root = str))
-  .catch(mst => { console.log('no root'); throw mst; });
+  .catch(mst => {console.error('no root'); throw mst; });
 
 exports.root = dir => dir || !root ? gitRoot(dir) : Promise.resolve(root);
 
-exports.Tag = () => promisify('raw', git(root))(['describe', '--all']);
+exports.Tag = () => promisify(git(root).raw, git(root))(['describe', '--all'])
+  .then(getFirst)
 
-exports.Show = (branch, file) => promisify('show', git(root))([branch + ':' + file.replace(/\\/g, '/')]);
+exports.Show = (branch, file) => promisify(git(root).show, git(root))([branch + ':' + file.replace(/\\/g, '/')]);

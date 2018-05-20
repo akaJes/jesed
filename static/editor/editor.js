@@ -90,7 +90,7 @@ var state;
               ev.preventDefault();
               if( $(this).parent().is('[aria-selected=true]'))
                 $('#preview-tab').tab('show')
-              $(this).parents('li').remove();
+              $(this).parent().remove();
               otI.shut(path);
               delete manager[path];
             })

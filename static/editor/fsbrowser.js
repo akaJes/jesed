@@ -91,7 +91,7 @@ function fsbrowser(ui, cb) {
                 } else {
                   tmp["Download"] = {
                     label: "Download",
-                    action: function(e) { download.attr('src', '/s/editor/files' + node.id);}
+                    action: function(e) { download.attr('src', '/s/editor/file' + node.id);}
                   };
                 }
 			    return tmp;

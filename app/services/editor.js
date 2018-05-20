@@ -9,14 +9,9 @@ const promisify = require('../helpers').promisify;
 const safePath = val => decodeURI(val).replace(/|\.\.|\/\//g, '');
 const getRoot = req => Promise.resolve(store.root(req))
 
-const wrap = (req, res, next) => {
-    
-    var result = next()
-    console.log(result)
-}
 //create
 router.post('/file/*', (req, res) => {
-  const f = req.query.type == 'file';
+  const f = req.body.type == 'file';
   const p = safePath(req.url.slice(5));
   return getRoot(req)
   .then(root => promisify(f && fs.writeFile || fs.mkdir)(path.join(root, p), f ? '' : 0o777)) //TODO: check if exists
@@ -71,7 +66,7 @@ router.get('/tree', function(req, res) {
 })
 
 //content
-router.get('/file/*', wrap, function(req, res) {
+router.get('/file/*', function(req, res) {
   const p = safePath(req.url.slice(5));
   return getRoot(req)
   .then(root => promisify(fs.stat)(path.join(root, p)).then(stats => !stats.isDirectory() && promisify(fs.readFile)(path.join(root, p)) || '' ))

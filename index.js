@@ -22,6 +22,7 @@ const pass = passA.reduce((p, i) => (p[i.split(':')[0]]=i.split(':')[2], p) , {}
 app.use('/', express.static(path.join('static', 'editor')));
 app.use('/nm', express.static(path.join('node_modules')));
 
+app.use(require('body-parser').urlencoded({ extended: false }));
 app.use(passport.initialize());
 app.use(passport.session());
 
@@ -46,7 +47,6 @@ walk('/home/jes/marlin-config')
 .then(a => Promise.all(a.map(name => promisify(magic.detectFile, magic)(name).then(mime => ({name, mime})))))
 .then(a => JSON.stringify(a,0,2))
 .then(console.log);
-
 
 store.mods.editor.root = () => Promise.resolve('./');
 
