@@ -38,7 +38,7 @@ module = {};
     <button class="btn btn-sm m-1" onclick="$('.tree').toggle()" style="float: left;" title="toggle filebrowser window">&lt;</button>
     <button class="btn btn-sm m-1" onclick="toggleFullScreen()" style="float: left;" title="fullscreen">F</button>
     <button type="button" class="btn btn-warning btn-sm m-1" style="float: left;display:none;" title="share workflow to friends">QR</button>
-    <ul class="nav nav-tabs" id="myTab" role="tablist" style="margin-left: 75px;">
+    <ul class="nav nav-tabs nav-scroll" id="myTab" role="tablist" style="margin-left: 75px;">
       <li class="nav-item">
         <a class="nav-link active" id="preview-tab" data-toggle="tab" href="#previewTab" role="tab" aria-controls="home" aria-selected="true">Preview</a>
       </li>
@@ -51,7 +51,7 @@ module = {};
         </div>
         <div id="editorTab" class="tab-pane fade h-100" role="tabpanel" aria-labelledby="editor-tab">
           <div class="stickit top">
-            <div class="uploader"></div>
+            <div class="nav-over"><div class="uploader"></div></div>
             <div id="editor"></div>
           </div>
         </div>

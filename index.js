@@ -19,9 +19,6 @@ const server = http.Server(app);
 const passA = fs.readFileSync('.htpasswd').toString().split(/\r\n?|\n/)
 const pass = passA.reduce((p, i) => (p[i.split(':')[0]]=i.split(':')[2], p) , {})
 
-app.use('/', express.static(path.join('static', 'editor')));
-app.use('/nm', express.static(path.join('node_modules')));
-
 app.use(require('body-parser').urlencoded({ extended: false }));
 app.use(passport.initialize());
 app.use(passport.session());
@@ -42,6 +39,9 @@ passport.use(new Strategy({realm: 'Users', qop: 'auth' },
 
 const auth = passport.authenticate('digest', { session: true })
 
+app.use('/', auth, express.static(path.join('static', 'editor')));
+app.use('/nm', express.static(path.join('node_modules')));
+
 if(0)
 walk('/home/jes/marlin-config')
 .then(a => Promise.all(a.map(name => promisify(magic.detectFile, magic)(name).then(mime => ({name, mime})))))
@@ -50,7 +50,7 @@ walk('/home/jes/marlin-config')
 
 store.mods.editor.root = () => Promise.resolve('./');
 
-app.use('/', require('./app/services'));
+app.use('/', auth, require('./app/services'));
 require('./app/services/ot').init(server, '/ws');
 
 

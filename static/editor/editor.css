@@ -6,7 +6,9 @@
 .ace_gutter-cell { background-repeat: no-repeat; }
 /* layout */
 html, body {
-  margin:0;
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
   height: 100%;
 }
 
@@ -25,7 +27,6 @@ html, body {
 }
 
 .uploader {
-  min-width: 500px;
   line-height: 28px;
   padding-left: 10px;
   background-color: linen;
@@ -47,16 +48,28 @@ html, body {
   padding:5px;
 }
 
-.nav-tabs {
+.nav-scroll {
   overflow-x: auto;
   overflow-y: hidden;
   display: -webkit-box;
   display: -moz-box;
 }
-.nav-tabs>li {
+.nav-scroll>* {
   float:none;
+  white-space:normal;
 }
-
+.nav-over {
+  position: relative;
+  padding-top: 50px;
+}
+.nav-over>* {
+  position: absolute;
+  top: 0;
+  width: 100%;
+  white-space: nowrap;
+  overflow-y: hidden;
+  overflow-x: auto;
+}
 /* selection marker */
 .remoteCaret {
   position: absolute;
