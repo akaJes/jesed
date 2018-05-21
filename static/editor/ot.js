@@ -1,3 +1,4 @@
+var sockPath = location.pathname + 'ws'
 ace.define("ot", function(require, exports, module) {
 "use strict";
     var Range = ace.require("ace/range").Range
@@ -12,7 +13,9 @@ ace.define("ot", function(require, exports, module) {
     var dmpMode = 0; //TODO
 
     function OT(manager, state) {
-        var socket = this.socket = io.connect({path: '/ws'});
+        var self = this;
+        this.remoteChange = 0;
+        var socket = this.socket = io.connect({path: sockPath});
         this.setName = function(name) {
           for(var s in manager) {
             manager[s].socket.emit('name', name)
@@ -20,11 +23,12 @@ ace.define("ot", function(require, exports, module) {
         }
         socket.on('ns', function(dir, type) {
           var ss = manager[dir];
-          var s = ss.socket = io.connect(dir, {path: '/ws'});
+          var s = ss.socket = io.connect(dir, {path: sockPath});
           var cli = ss.ot = new ot.Client(0);
           var session = ss.session;
           ss.dc = debounce(scan, 1000);
           function onChange(obj) {
+            if (self.remoteChange) return;
             state('typing...')
             ss.dc(ss);
             var doc = session.doc;
@@ -98,11 +102,13 @@ ace.define("ot", function(require, exports, module) {
             marker.refresh();
           }
           s.on('operation', function (clientId, operation, selection) {
+            self.remoteChange = true;
             scan(ss); //apply undebounced
             var operation = ot.TextOperation.fromJSON(operation);
             cli.applyServer(operation);
             var range= {start: selection.ranges[0].anchor, end: selection.ranges[0].head};
             setCarret(clientId, range);
+            self.remoteChange = false;
           });
           cli.applyOperation = function(operation) {
               var index = 0;
@@ -138,8 +144,8 @@ ace.define("ot", function(require, exports, module) {
           }
           change && session._signal('changeFrontMarker');
         };
-        this.init = function (dir) {
-          socket.emit('ns', dir);
+        this.init = function (dir, token, name) {
+          socket.emit('ns', dir, token, name);
           var session = manager[dir].session;
           session.remoteCarets = {};
           session.remoteNames = {};

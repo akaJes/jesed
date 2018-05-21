@@ -1,4 +1,13 @@
-var myName;
+var services = 's/editor/';
+var myName, token;
+var config;
+$(function(){
+  config = $.ajax(services).then(function(o) {
+    myName = o.name;
+    token = o.token.token;
+    return o;
+  })
+})
 var otI;
 var state;
       function createFileUploader(element, tree, editor) {
@@ -28,6 +37,7 @@ var state;
           editor.session.doc.replace(range, b);
           editor._signal("change", {});
         }, 'beauitify JS code');
+        myName ||
         addButton('NAME',function(e){
           if(isElectron()) {
             var d = vex.dialog.prompt({
@@ -58,7 +68,7 @@ var state;
 //            loadEditor(path);
           else
           if(isImageFile(path))
-            loadPreview('/s/editor/file/' + path);
+            loadPreview(services +'file/' + path);
           else
             loadEditor(path);
         };
@@ -145,11 +155,14 @@ var state;
         require('diff');
         var OT = require("ot");
         otI = new OT(manager, function(text){ state.text(text)});
-
+        0 && config.then(function(data){
+          otI.setName(data.name);
+        })
         function httpPost(filename, data, type) {
+          return //disabled
           var formData = new FormData();
           formData.append("data", new Blob([data], { type: type }), filename);
-          $.post({url:'/s/editor/upload' + filename, data: formData, contentType: false, processData: false})
+          $.post({url: services + 'upload' + filename, data: formData, contentType: false, processData: false})
           .then(function(data) {
             state.text('saved!');
           },function(data){
@@ -157,7 +170,7 @@ var state;
           });
         }
         function httpGet(theUrl) {
-          $.when(0 && $.get('/s/editor/file' + theUrl), $.get('/s/editor/git' + theUrl, otI.init(theUrl)).catch(function(){ return [' ']}))
+          $.when(0 && $.get(services + 'file' + theUrl), $.get(services + 'git' + theUrl, otI.init(theUrl, token, myName)).catch(function(){ return [' ']}))
           .then(function(data, dataGit){
             delete editor.$setBaseText; //TODO: set option to session
             editor.setOptions({setBaseText: dataGit[0] })

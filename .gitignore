@@ -1,3 +1,5 @@
 .htpasswd
 package-lock.json
 node_modules
+projects.json
+sessions

@@ -6,7 +6,7 @@ function fsbrowser(ui, cb) {
       if (this.files.length && path) {
         var form = new FormData();
         form.append("data", this.files[0], this.files[0].name);
-        $.ajax({url:'/s/editor/upload' + path + '/' + this.files[0].name, type: 'POST', data: form, contentType: false, processData: false})
+        $.ajax({url: services + 'upload' + path + '/' + this.files[0].name, type: 'POST', data: form, contentType: false, processData: false})
         .then(function(data) {
           ui.jstree('refresh');
         })
@@ -20,7 +20,7 @@ function fsbrowser(ui, cb) {
 	ui.jstree({
 		'core' : {
 			'data' : {
-			    'url' : '/s/editor/tree',
+			    'url' : services + 'tree',
 			    'data' : function (node) {
 				return { 'id' : node.id };
 			    }
@@ -91,7 +91,7 @@ function fsbrowser(ui, cb) {
                 } else {
                   tmp["Download"] = {
                     label: "Download",
-                    action: function(e) { download.attr('src', '/s/editor/file' + node.id);}
+                    action: function(e) { download.attr('src', services + 'file' + node.id);}
                   };
                 }
 			    return tmp;
@@ -109,15 +109,15 @@ function fsbrowser(ui, cb) {
 		'plugins' : ['state','dnd','sort','types','contextmenu','unique']
 	})
 	.on('delete_node.jstree', function (e, data) {
-		    $.ajax({url: '/s/editor/file' + data.node.id, method: 'delete'})
+		    $.ajax({url: services + 'file' + data.node.id, method: 'delete'})
 			.fail(function () {
 			    data.instance.refresh();
 			});
 	})
 	.on('rename_node.jstree', function (e, data) {
             (/\//.test(data.node.id)
-            && $.ajax({method: 'put', url: '/s/editor/file' + data.node.id, data: {to: data.node.parent + '/' + data.text}})
-            || $.post('/s/editor/file' + data.node.parent + '/' + data.node.text, {type: data.node.type})
+            && $.ajax({method: 'put', url: services + 'file' + data.node.id, data: {to: data.node.parent + '/' + data.text}})
+            || $.post(services + 'file' + data.node.parent + '/' + data.node.text, {type: data.node.type})
             )
 			.done(function (d) {
 			    data.instance.set_id(data.node, d.id);
@@ -127,7 +127,7 @@ function fsbrowser(ui, cb) {
 			});
 	})
 	.on('move_node.jstree', function (e, data) {
-            $.ajax({method: 'put', url: '/s/editor/file' + data.node.id, data: {to: data.parent + '/' + data.node.text}})
+            $.ajax({method: 'put', url: services + 'file' + data.node.id, data: {to: data.parent + '/' + data.node.text}})
 			.done(function (d) {
 			    //data.instance.load_node(data.parent);
 			    data.instance.refresh();
