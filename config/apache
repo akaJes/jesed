@@ -1,0 +1,8 @@
+#!/bin/bash
+sudo cp jesed.conf /etc/apache2/conf-available
+sudo a2enconf jesed
+sudo a2enmod rewrite
+sudo a2enmod proxy
+sudo a2enmod proxy_http
+sudo a2enmod proxy_wstunnel
+sudo systemctl restart apache2

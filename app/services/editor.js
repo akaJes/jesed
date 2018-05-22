@@ -4,6 +4,7 @@ const router = module.exports = require('express').Router();
 const formidable = require('formidable');
 const git = require('../git-tool');
 const promisify = require('../helpers').promisify;
+const ncp = require('ncp').ncp;
 
 const safePath = val => decodeURI(val).replace(/|\.\.|\/\//g, '');
 const getRoot = req => Promise.resolve(req.project.path);
@@ -39,7 +40,15 @@ router.put('/file/*', (req, res) => {
   send(data, res);
 })
 
-//TODO:copy
+//copy
+router.put('/copy/*', (req, res) => {
+  const p = safePath(req.url.slice(5));
+  const t = safePath(req.body.to);
+  const data = getRoot(req)
+  .then(root => promisify(ncp)(path.join(root, p), path.join(root, t)))
+  .then(a => ({id: t}))
+  send(data, res);
+})
 
 //list
 router.get('/tree', function(req, res) {
@@ -88,6 +97,7 @@ router.post('/upload/*', function(req, res) {
 router.get('/git/*', function(req, res) {
   const p = safePath(req.url.slice(5));
   const data = getRoot(req)
-  .then(root => git.Tag(root).then(tag => git.Show(root, tag, p).catch(a => '')))
+  .then(root => git.Tag(root).then(tag => git.Show(root, tag, p)))
+  .catch(a => '')
   send(data, res);
 })

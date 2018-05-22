@@ -136,8 +136,8 @@ function fsbrowser(ui, cb) {
 			    data.instance.refresh();
 			});
 	})
-		.on('copy_node.jstree', function (e, data) { //TODO
-		    $.get('?operation=copy_node', { 'id' : data.original.id, 'parent' : data.parent })
+	.on('copy_node.jstree', function (e, data) {
+            $.ajax({method: 'put', url: services + 'copy' + data.original.id, data: {to: data.parent + '/' + data.node.text}})
 			.done(function (d) {
 			    //data.instance.load_node(data.parent);
 			    data.instance.refresh();
@@ -145,48 +145,11 @@ function fsbrowser(ui, cb) {
 			.fail(function () {
 			    data.instance.refresh();
 			});
-		})
-		.on('changed.jstree', function (e, data) {
-		    if(data && data.selected && data.selected.length) {
+	})
+	.on('changed.jstree', function (e, data) {
+		if(data && data.selected && data.selected.length) {
             var name = data.selected.join(':');
             return cb(name, data.node.type);
-//            var type = getType(name);
-			$.get('/s/editor/files' + name, function (d) {
-			    if(d && typeof d.type !== 'undefined') {
-				$('#data .content').hide();
-				switch(d.type) {
-				    case 'text':
-				    case 'txt':
-				    case 'md':
-				    case 'htaccess':
-				    case 'log':
-				    case 'sql':
-				    case 'php':
-				    case 'js':
-				    case 'json':
-				    case 'css':
-				    case 'html':
-					$('#data .code').show();
-					$('#code').val(d.content);
-					break;
-				    case 'png':
-				    case 'jpg':
-				    case 'jpeg':
-				    case 'bmp':
-				    case 'gif':
-					$('#data .image img').one('load', function () { $(this).css({'marginTop':'-' + $(this).height()/2 + 'px','marginLeft':'-' + $(this).width()/2 + 'px'}); }).attr('src',d.content);
-					$('#data .image').show();
-					break;
-				    default:
-					$('#data .default').html(d.content).show();
-					break;
-				}
-			    }
-			});
-		    }
-		    else {
-			$('#data .content').hide();
-			$('#data .default').html('Select a file from the tree.').show();
-		    }
-		});
-	}
+		}
+	});
+}

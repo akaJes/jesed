@@ -98,6 +98,7 @@ var state;
             //close
             tab.find('button').on('click', function(ev) {
               ev.preventDefault();
+              ev.stopPropagation();
               if( $(this).parent().is('[aria-selected=true]'))
                 $('#preview-tab').tab('show')
               $(this).parent().remove();
@@ -223,6 +224,7 @@ $(function(){
         var editor = createEditor("editor", vars.file, vars.lang, vars.theme);
         var tree = createTree("tree", editor);
         createFileUploader(".uploader", tree, editor);
+    0 &&
     $.ajax('/upnp/check')
     .then(function(data) {
       if(data && data[0]) {

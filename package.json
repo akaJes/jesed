@@ -12,7 +12,12 @@
     "url": "git+https://github.com/akaJes/jesed.git"
   },
   "config": {
-    "port": 3000
+    "port": 9353,
+    "baseURI": "/jesed"
+  },
+  "configLocal": {
+    "port": 3000,
+    "baseURI": ""
   },
   "apps": [
     {
@@ -55,6 +60,7 @@
     "jquery": "^3.3.1",
     "jstree": "^3.3.5",
     "mmmagic": "^0.5.0",
+    "ncp": "^2.0.0",
     "ot": "git+https://github.com/Operational-Transformation/ot.js.git",
     "passport": "^0.4.0",
     "passport-http": "^0.3.0",

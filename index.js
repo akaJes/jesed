@@ -12,6 +12,7 @@ const passport = require('passport');
 const Strategy = require('passport-http').DigestStrategy;
 //local store
 const {promisify, walk, getAllFiles} = require('./app/helpers');
+const pkg = require('./package.json');
 
 const magic = new mmm.Magic(mmm.MAGIC_MIME_TYPE);
 const app = express();
@@ -22,12 +23,17 @@ const config = {};
 const tokens = {};
 
 const configFiles = Promise.all([
-  promisify(fs.readFile)('.htpasswd'),
+  promisify(fs.readFile)('.htdigest'),
   promisify(fs.readFile)('projects.json') //maybe simply require?
 ]).catch(e => {
   console.error('missing config', e)
   process.exit();
 })
+
+app.set('views', path.join(__dirname, 'static'));
+app.set('view engine', 'ejs');
+app.engine('.html', require('ejs').renderFile);
+
 app.use(require('body-parser').urlencoded({ extended: false }));
 
 passport.serializeUser(function(user, done) {
@@ -57,8 +63,17 @@ app.use(session({
 app.use(passport.initialize());
 app.use(passport.session());
 //app.get('/logout', function(req, res) { res.redirect('/') }) //'//' + req.headers.host + 
-
-app.use(passport.authenticate('digest', { session: true }));
+const modAuth = (req, res, next) => {
+console.log(req);
+  const url = req.url;
+  const auth = passport.authenticate('digest', { session: true });
+  req.url = (pkg.config.baseURI || '') + req.url;
+  auth(req, res, () => {
+    req.url = url;
+    next();
+  })
+}
+app.use(modAuth);//, passport.authenticate('digest', { session: true }));
 const auth = p => (req, res, next) => {
   req.project = p;
   req.session.tokens || (req.session.tokens = {});
@@ -88,23 +103,18 @@ configFiles.then(files => {
     require('./app/services/ot').init(server, '/' + p.id + '/ws', p.path, tokens[p.id])
   ));
 
-app.get('/', function(req, res) {
-  const start = '<link  href="/nm/bootstrap/dist/css/bootstrap.min.css" rel="stylesheet"><body class="container mt-5">';
-  const li = (t, h, c) => '<li class="list-group-item ' + (c || '') + '"><a href="' + h + '">' + t + '</a></li>'
-  if (req.isAuthenticated()) {
-    var list = config.projects
-      .filter(p => p.editors.indexOf(req.user.id) >= 0)
-      .map(p => li(p.name, p.id))
-    list.push(li('logout', '//logout:logout@' + req.headers.host + '/logout', 'list-group-item-danger'));
-    return res.send(start + '<ul class="list-group">' + list.join('') + '</ul>')
-  }
-  res.send('no access')
+  app.get('/', function(req, res) {
+    if (req.isAuthenticated()) {
+      var list = config.projects
+        .filter(p => p.editors.indexOf(req.user.id) >= 0)
+      return res.render('login.html', {projects: list});
+    }
+    res.send('no access')
+  });
+  server.listen(pkg.config.port, function () {
+    console.log('started at port ' + pkg.config.port);
+  });
 });
-server.listen(require('./package.json').config.port, function () {
-  console.log('Приклад застосунку, який прослуховує 3000-ий порт!');
-});
-});
-
 
 process.on('unhandledRejection', (reason, p) => {
   console.error('Unhandled Rejection at: Promise', p, 'reason:', reason);

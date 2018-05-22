@@ -1,4 +1,4 @@
-.htpasswd
+.htdigest
 package-lock.json
 node_modules
 projects.json
