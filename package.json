@@ -1,10 +1,10 @@
 {
   "name": "jesed",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "online instant collaborative editor",
   "main": "index.js",
   "scripts": {
-    "postinstall": "cd node_modules/ot ; npm i ; node_modules/.bin/grunt --force ; rm -r node_modules",
+    "rebuild-ot": "cd node_modules/ot ; npm i ; node_modules/.bin/grunt --force ; rm -r node_modules",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
@@ -12,12 +12,15 @@
     "url": "git+https://github.com/akaJes/jesed.git"
   },
   "config": {
-    "port": 9353,
-    "baseURI": "/jesed"
-  },
-  "configLocal": {
-    "port": 3000,
-    "baseURI": ""
+    "mode": "apache",
+    "apache": {
+      "port": 9353,
+      "baseURI": "/jesed"
+    },
+    "local": {
+      "port": 3000,
+      "baseURI": ""
+    }
   },
   "apps": [
     {

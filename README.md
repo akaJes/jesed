@@ -7,17 +7,26 @@
 * user authentification per every project
 
 ### Installation
-`npm i jesed`
+```
+mkdir jesed
+cd jesed
+npm i jesed
+sudo npm -g i npm
+npm run rebuild-ot
+```
 #### Create passwords file
-`htdigest -c .htdigest User me`
+`htdigest -c .htdigest Users me`
 #### Add other users
-`htdigest .htdigest User anotherme`
+`htdigest .htdigest Users anotherme`
 #### Create base projects config
 `cp projects.json.dist projects.json`
 #### For local use
-rename in package.json `config` -> `configApache` and `configLocal` -> `config`
+rename `config.mode` variable in package.json to `local`
 #### For use with apache
-install script from ./config/apache folder
+```
+cd config
+sudo ./apache
+```
 ### Run as service
 ```
 sudo npm i -g pm2

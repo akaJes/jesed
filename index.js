@@ -18,6 +18,7 @@ const magic = new mmm.Magic(mmm.MAGIC_MIME_TYPE);
 const app = express();
 const server = http.Server(app);
 
+const getMode = () => pkg.config && pkg.config[pkg.config.mode || 'local'] || {};
 const md5 = data => crypto.createHash('md5').update(data).digest("hex");
 const config = {};
 const tokens = {};
@@ -67,7 +68,7 @@ const modAuth = (req, res, next) => {
 console.log(req);
   const url = req.url;
   const auth = passport.authenticate('digest', { session: true });
-  req.url = (pkg.config.baseURI || '') + req.url;
+  req.url = (getMode().baseURI || '') + req.url;
   auth(req, res, () => {
     req.url = url;
     next();
@@ -111,8 +112,8 @@ configFiles.then(files => {
     }
     res.send('no access')
   });
-  server.listen(pkg.config.port, function () {
-    console.log('started at port ' + pkg.config.port);
+  server.listen(getMode().port, function () {
+    console.log('started at port ' + getMode().port);
   });
 });
 
