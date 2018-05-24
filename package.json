@@ -1,10 +1,10 @@
 {
   "name": "jesed",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "online instant collaborative editor",
-  "main": "index.js",
+  "main": "./jesed",
   "scripts": {
-    "rebuild-ot": "cd node_modules/ot ; npm i ; node_modules/.bin/grunt --force ; rm -r node_modules",
+    "postinstall": "cd node_modules/ot && ( npm i ; node_modules/.bin/grunt --force ; rm -r node_modules ; cd ../..)",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
@@ -12,7 +12,6 @@
     "url": "git+https://github.com/akaJes/jesed.git"
   },
   "config": {
-    "mode": "apache",
     "apache": {
       "port": 9353,
       "baseURI": "/jesed"
@@ -25,7 +24,11 @@
   "apps": [
     {
       "name": "jesed",
-      "script": "./index.js",
+      "script": "./jesed",
+      "args": [
+        "serve",
+        "apache"
+      ],
       "watch": [
         "app",
         "./*.js"
@@ -64,13 +67,16 @@
     "jstree": "^3.3.5",
     "mmmagic": "^0.5.0",
     "ncp": "^2.0.0",
+    "opn": "^5.3.0",
     "ot": "git+https://github.com/Operational-Transformation/ot.js.git",
     "passport": "^0.4.0",
     "passport-http": "^0.3.0",
     "popper.js": "^1.14.3",
+    "prompt": "^1.0.0",
     "session-file-store": "^1.2.0",
     "simple-git": "^1.92.0",
     "socket.io": "^2.1.1",
-    "vex-js": "^4.1.0"
+    "vex-js": "^4.1.0",
+    "yargs": "^11.0.0"
   }
 }

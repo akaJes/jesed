@@ -1,0 +1,131 @@
+#!/usr/bin/env node
+const crypto = require('crypto');
+const fs = require('fs');
+const path = require('path');
+
+const yargs = require('yargs');
+const opn = require('opn');
+const prompt = require('prompt');
+
+const {promisify, walk, getAllFiles} = require('./app/helpers');
+const server = require('./app/server');
+
+const md5 = data => crypto.createHash('md5').update(data).digest("hex");
+
+const config = {};
+
+//create new project file
+fs.copyFile('./projects.json.dist', 'projects.json', fs.constants.COPYFILE_EXCL, err => 0);
+
+const getPass = () =>
+  promisify(fs.readFile)('.htdigest')
+  .catch(e => '')
+  .then(text => text.toString().split(/\r\n?|\n/).filter(a => a).map(i => i.split(':')))
+
+const getProjects = () =>
+  promisify(fs.readFile)('projects.json')
+  .catch(e => '[]')
+  .then(text => JSON.parse(text.toString()))
+
+const setPass = (pass) =>
+  Promise.resolve(pass.map(i => i.join(':')).join('\n'))
+  .then(text => promisify(fs.writeFile)('.htdigest', text))
+
+yargs
+  .command(['serve [mode]', 's'], 'start the server', (yargs) => {
+    yargs
+      .positional('mode', {
+        describe: 'local or apache',
+        default: 'local'
+      })
+  }, (argv) => {
+    if (argv.verbose) console.info(`start server ${argv.mode}`)
+    serve(argv.mode)
+  })
+  .command(['projects', 'p'], 'list available projects', {}, (argv) => {
+    getProjects().then(i => i.map(a => console.log(a)))
+  })
+  .command(['users'], 'list available users', {}, (argv) => {
+    getPass().then(i => i.map(a => console.log(a[0])))
+  })
+  .command(['user <mode> <name>'], 'set or remove allowed users', (yargs) => {
+    yargs
+      .positional('mode', {
+        describe: 'set or remove',
+//        default: 'set'
+      })
+  }, (argv) => {
+    if (argv.mode == 'remove') {
+      return getPass()
+      .then(p => p.filter(i => i[0] != argv.name))
+      .then(setPass)
+      .then(a => console.log('password removed'));
+    }
+    prompt.start();
+    const schema = {
+      properties: {
+        name: {
+          pattern: /^[a-zA-Z\s\-]+$/,
+          message: 'Name must be only letters, spaces, or dashes',
+          required: true,
+        },
+        password: {
+          hidden: true,
+          replace: '*',
+        }
+      }
+    };
+    delete schema.properties.name; //TODO: make name not required and mode too
+    promisify(prompt.get)(schema)
+    .then(result => {
+      const pwd = (a, pass) => { a[2] = pass; a[2] = md5(a.join(':')); return a; };
+      getPass()
+      .then(p =>
+        p.filter(i => i[0] == argv.name).length
+        && p.map(i => i[0] == argv.name && pwd(i, result.password) || i)
+        || (p.push(pwd([argv.name, 'Users', ''], result.password)), p)
+      )
+      .then(setPass)
+      .then(a => console.log('password set'));
+    });
+  })
+  .option('verbose', {
+    alias: 'v',
+    default: false
+  })
+  .showHelpOnFail(true)
+  .demandCommand(1, '')
+  .argv
+
+function serve(mode) {
+  Promise.all([
+    getPass(),
+    getProjects(),
+    require('./package.json'),
+  ])
+  .catch(e => {
+    console.error('missing config', e)
+    process.exit();
+  })
+  .then(files => {
+    Object.assign(config, files[2].config[mode])
+    config.pass = files[0].reduce((p, i) => (p[i[0]] = i[2], p) , {});
+    config.projects = files[1];
+    server(config);
+    mode == 'local' && opn('http://localhost:' + config.port);
+  })
+}
+
+process.on('unhandledRejection', (reason, p) => {
+  console.error('Unhandled Rejection at: Promise', p, 'reason:', reason);
+  // application specific logging, throwing an error, or other logic here
+});
+
+if(0)
+process.on('SIGINT', function() {
+  console.log('Graceful closing...');
+  server.close(function() {
+    process.exit(0);
+  });
+});
+
