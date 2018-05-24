@@ -3,7 +3,7 @@ const path = require('path');
 
 const mmm = require('mmmagic');
 const sio = require('socket.io');
-const ot = require('ot');
+const ot = require('ot-jes');
 const promisify = require('../helpers').promisify;
 
 var ns = {};
