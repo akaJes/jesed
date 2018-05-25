@@ -2,5 +2,6 @@
   "id": "test",
   "name": "test project",
   "path": "./",
+  "excludes": [".git", "sessions"],
   "editors": ["me"]
 }]

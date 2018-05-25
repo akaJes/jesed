@@ -117,8 +117,10 @@ ace.define("ot", function(require, exports, module) {
             scan(ss); //apply undebounced
             var operation = ot.TextOperation.fromJSON(operation);
             cli.applyServer(operation);
-            var range= {start: selection.ranges[0].anchor, end: selection.ranges[0].head};
-            setCarret(clientId, range);
+            if (selection) {
+              var range = {start: selection.ranges[0].anchor, end: selection.ranges[0].head};
+              setCarret(clientId, range);
+            }
             self.remoteChange = false;
           });
           cli.applyOperation = function(operation) {

@@ -54,7 +54,7 @@ router.put('/copy/*', (req, res) => {
 router.get('/tree', function(req, res) {
   var dir = safePath(req.query.id);
   dir = dir == '#' && '/' || dir;
-  excludes = ['.', '..', '.git', 'node_modules'];
+  excludes = ['.', '..'].concat(req.project.excludes || [ '.git', 'node_modules']);
   const data = getRoot(req)
   .then(root => promisify(fs.readdir)(path.join(root, dir))
     .then(list => list.filter(name => name && excludes.indexOf(name) < 0))
@@ -65,7 +65,9 @@ router.get('/tree', function(req, res) {
         text: name,
         id: path.join(dir, name),
 //        icon: stats.isDirectory() ? 'jstree-folder' : "jstree-file",
-      }))))
+      }))
+      .catch(e => 0)
+    ).filter(i => i))
     )
   )
   .then(list => dir != '/' && list || {text: req.project.name, children: list, id: '/', type: 'default', state: {opened: true, disabled: true}})

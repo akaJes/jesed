@@ -22,6 +22,7 @@ var state;
           .on('click', function() {
             otI.setAutoSave(!$(this).hasClass('active'));
           })
+          .attr('title', 'disable auto save')
         );
         addButton('<i class="fas fa-chevron-down"></i>',function(e){ editor.execCommand("nextDiff") }, 'seek for next diff');
         addButton('<i class="fas fa-chevron-up"></i>',function(e){ editor.execCommand("prevDiff") }, 'seek for previous diff');

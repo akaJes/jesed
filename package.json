@@ -1,9 +1,11 @@
 {
   "name": "jesed",
-  "version": "0.1.3",
+  "version": "0.1.4",
   "description": "online instant collaborative editor",
   "main": "./jesed",
   "scripts": {
+    "pkg": "pkg jesed --options expose-gc",
+    "pkg-dev": "pkg -t node8-linux jesed",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
@@ -41,6 +43,13 @@
       }
     }
   ],
+  "pkg": {
+    "scripts": "app/**/*.js",
+    "assets": [
+      "static/**/*",
+      "./projects.json.dist"
+    ]
+  },
   "keywords": [
     "instant",
     "collaboraion",
@@ -58,6 +67,7 @@
     "ace-builds": "^1.3.3",
     "body-parser": "^1.18.3",
     "bootstrap": "^4.1.1",
+    "chokidar": "^2.0.3",
     "diff-match-patch": "^1.0.1",
     "ejs": "^2.6.1",
     "express": "^4.16.3",
@@ -78,5 +88,6 @@
     "socket.io": "^2.1.1",
     "vex-js": "^4.1.0",
     "yargs": "^11.0.0"
-  }
+  },
+  "devDependencies": {}
 }

@@ -76,9 +76,10 @@ app.use('/nm', express.static(path.join('node_modules')));
 
   config.projects.map(p => (
     (tokens[p.id] || (tokens[p.id] = {})),
+    (p.ws = '/' + p.id + '/ws'),
     app.use('/' + p.id, auth(p), express.static(path.join(__dirname, '..', 'static', 'editor'))),
     app.use('/' + p.id, auth(p), require('./services')),
-    require('./services/ot').init(server, '/' + p.id + '/ws', p.path, tokens[p.id])
+    require('./services/ot')(server, p, tokens[p.id])
   ));
   app.get('/', function(req, res) {
     if (req.isAuthenticated()) {
