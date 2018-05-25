@@ -18,17 +18,23 @@ exports.init = (server, url, root, tokens) => {
   io.on('connection', function(socket) {
     socket.on('ns', function (docId, token, name) {
       if (Object.keys(tokens).map(i => tokens[i].token).indexOf(token) < 0) return;
+      getDoc(io, url, root, docId, name)
+        .then(ob => socket.emit('ns', docId, ob.type))
+        .catch(e => console.error(e))
+    });
+  });
+}
+function getDoc(io, url, root, docId, name) {
       if (ns[url][docId])
-        getMime(root, docId)
-        .then(type => socket.emit('ns', docId, type));
+        return Promise.resolve(ns[url][docId])
       else {
-        Promise.all([getFile(root, docId), getMime(root, docId)])
+        return Promise.all([getFile(root, docId), getMime(root, docId)])
         .then(p => {
           const text = p[0], type = p[1];
           if (type.indexOf('audio') == 0 || type.indexOf('application') == 0)
             throw new Error('uneditable format');
-          const doc = ns[url][docId] = new ot.EditorSocketIOServer(text.toString(), 0, docId);
-          socket.emit('ns', docId, type);
+          const doc = new ot.EditorSocketIOServer(text.toString(), 0, docId);
+          const ob = ns[url][docId] = {ot: doc, type: type};
           io.of(docId)
           .on('connection', function(socket) {
             function clients(mode) {
@@ -52,9 +58,7 @@ exports.init = (server, url, root, tokens) => {
               setFile(root, docId, doc.document);
             });
           })
+          return ob;
         })
-        .catch(e => console.error(e))
       }
-    });
-  });
 }

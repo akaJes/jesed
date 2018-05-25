@@ -12,14 +12,20 @@ var otI;
 var state;
       function createFileUploader(element, tree, editor) {
         function addButton(name, fn, title) {
-          $(element).append($('<button>').addClass('btn btn-sm m-1').text(name).on('click', fn).attr('title', title));
+          $(element).append($('<button>').addClass('btn btn-sm m-1').html(name).on('click', fn).attr('title', title));
         }
 //        addButton('<<',function(e){ $('.jstree').toggle(); });
 //        addButton('A',function(e){ toggleFullScreen(); });
 //        addButton('Save',function(e){ editor.execCommand("saveCommand") });
-        addButton('next',function(e){ editor.execCommand("nextDiff") }, 'seek for next diff');
-        addButton('prev',function(e){ editor.execCommand("prevDiff") }, 'seek for previous diff');
-        addButton('{}', function(e) {
+        $(element).append(
+          $('<button type="button" class="btn btn-sm btn-primary active" data-toggle="button" aria-pressed="false" autocomplete="off"><i class="fas fa-save"></i></button>')
+          .on('click', function() {
+            otI.setAutoSave(!$(this).hasClass('active'));
+          })
+        );
+        addButton('<i class="fas fa-chevron-down"></i>',function(e){ editor.execCommand("nextDiff") }, 'seek for next diff');
+        addButton('<i class="fas fa-chevron-up"></i>',function(e){ editor.execCommand("prevDiff") }, 'seek for previous diff');
+        addButton('<i class="fas fa-code"></i>', function(e) {
           if (!editor.getSelectedText()) return;
           var beautify = ace.require("ace/ext/beautify"); // get reference to extension
           var session = ace.createEditSession('', editor.session.getOption('mode'));
@@ -38,7 +44,7 @@ var state;
           editor._signal("change", {});
         }, 'beauitify JS code');
         myName ||
-        addButton('NAME',function(e){
+        addButton('<i class="fas fa-user"></i>',function(e){
           if(isElectron()) {
             var d = vex.dialog.prompt({
               message: 'Tell Ur Name!!!',
@@ -55,7 +61,7 @@ var state;
               otI.setName(myName = value);
           }
         }, 'set Your name for collaborative editing');
-        addButton('undo',function(e){ editor.getSession().getUndoManager().undo(false); });
+        addButton('<i class="fas fa-undo"></i>',function(e){ editor.getSession().getUndoManager().undo(false); }, 'undo');
         $(element).append(state = $('<span class="m-1">Loading...</span>'));
       }
 
@@ -155,7 +161,11 @@ var state;
         new MT(editor)
         require('diff');
         var OT = require("ot");
-        otI = new OT(manager, function(text){ state.text(text)});
+        otI = new OT(manager, function(text) {
+          if (text == 'torn')
+            editor.setReadOnly(true);
+          state.text(text)
+        });
         0 && config.then(function(data){
           otI.setName(data.name);
         })

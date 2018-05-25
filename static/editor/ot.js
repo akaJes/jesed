@@ -15,11 +15,21 @@ ace.define("ot", function(require, exports, module) {
     function OT(manager, state) {
         var self = this;
         this.remoteChange = 0;
+        this.autoSave = true;
         var socket = this.socket = io.connect({path: sockPath});
         this.setName = function(name) {
           for(var s in manager) {
             manager[s].socket.emit('name', name)
           }
+        }
+        this.setAutoSave = function(on) {
+          if (self.autoSave == on) return;
+          self.autoSave = on;
+          if (on)
+            for(var s in manager)
+              scan(manager[s]);
+          else
+            state('frozed.')
         }
         socket.on('ns', function(dir, type) {
           var ss = manager[dir];
@@ -29,6 +39,7 @@ ace.define("ot", function(require, exports, module) {
           ss.dc = debounce(scan, 1000);
           function onChange(obj) {
             if (self.remoteChange) return;
+            if (!self.autoSave) return;
             state('typing...')
             ss.dc(ss);
             var doc = session.doc;
@@ -76,12 +87,12 @@ ace.define("ot", function(require, exports, module) {
           });
           s.on('ack', function () {
             state('stored')
-            s.emit('ack'); // ??
+            //s.emit('ack'); // ??
             cli.serverAck();
           });
           s.on('disconnect', function () {
             session.disconnected = true;
-            //editor.setReadOnly(true)
+            state('torn');
           });
           s.on('selection', function (clientId, selection) {
             var range= {start: selection.ranges[0].anchor, end: selection.ranges[0].head};

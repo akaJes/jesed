@@ -10,6 +10,8 @@
     <script src="../nm/jstree/dist/jstree.js"></script>
 
     <link  href="../nm/bootstrap/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link  href="../nm/@fortawesome/fontawesome-free-webfonts/css/fontawesome.css" rel="stylesheet">
+    <link  href="../nm/@fortawesome/fontawesome-free-webfonts/css/fa-solid.css" rel="stylesheet">
 <!--<script src="/nm/tether/dist/js/tether.min.js"></script>-->
     <script src="../nm/bootstrap/dist/js/bootstrap.min.js"></script>
     <script src="../nm/socket.io-client/dist/socket.io.js"></script>
@@ -35,8 +37,8 @@ module = {};
   <body>
 <div class="stickit top">
   <div>
-    <button class="btn btn-sm m-1" onclick="$('.tree').toggle()" style="float: left;" title="toggle filebrowser window">&lt;</button>
-    <button class="btn btn-sm m-1" onclick="toggleFullScreen()" style="float: left;" title="fullscreen">F</button>
+    <button class="btn btn-sm m-1" onclick="$('.tree').toggle()" style="float: left;" title="toggle filebrowser window"><i class="fas fa-chevron-left"></i></button>
+    <button class="btn btn-sm m-1" onclick="toggleFullScreen()" style="float: left;" title="fullscreen"><i class="fas fa-arrows-alt"></i></button>
     <button type="button" class="btn btn-warning btn-sm m-1" style="float: left;display:none;" title="share workflow to friends">QR</button>
     <ul class="nav nav-tabs nav-scroll" id="myTab" role="tablist" style="margin-left: 75px;">
       <li class="nav-item">
