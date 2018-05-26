@@ -1,11 +1,11 @@
 {
   "name": "jesed",
-  "version": "0.1.4",
+  "version": "0.1.5",
   "description": "online instant collaborative editor",
   "main": "./jesed",
   "scripts": {
-    "pkg": "pkg jesed --options expose-gc",
-    "pkg-dev": "pkg -t node8-linux jesed",
+    "pkg": "rm node_modules/@fortawesome/fontawesome-free-webfonts/package.json ; pkg --options expose-gc --out-path build .",
+    "pkg-dev": "pkg --options expose-gc -t node8-linux .",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
@@ -32,7 +32,7 @@
       ],
       "watch": [
         "app",
-        "./*.js"
+        "jesed"
       ],
       "ignore_watch": [
         "node_modules",
@@ -43,11 +43,23 @@
       }
     }
   ],
+  "bin": {
+    "jesed": "./jesed"
+  },
   "pkg": {
-    "scripts": "app/**/*.js",
+    "scripts": [
+      "app"
+    ],
     "assets": [
-      "static/**/*",
-      "./projects.json.dist"
+      "static",
+      "node_modules/@fortawesome",
+      "node_modules/ot-jes",
+      "node_modules/vex-js",
+      "node_modules/jstree",
+      "node_modules/ace-builds/src-min",
+      "node_modules/jquery",
+      "node_modules/bootstrap",
+      "projects.json.dist"
     ]
   },
   "keywords": [
@@ -72,12 +84,14 @@
     "ejs": "^2.6.1",
     "express": "^4.16.3",
     "express-session": "^1.15.6",
+    "file-type": "^8.0.0",
     "formidable": "^1.2.1",
+    "is-binary": "^0.1.0",
     "jquery": "^3.3.1",
     "jstree": "^3.3.5",
-    "mmmagic": "^0.5.0",
+    "mime-types": "^2.1.18",
     "ncp": "^2.0.0",
-    "opn": "^5.3.0",
+    "open": "0.0.5",
     "ot-jes": "^0.1.0",
     "passport": "^0.4.0",
     "passport-http": "^0.3.0",
@@ -89,5 +103,7 @@
     "vex-js": "^4.1.0",
     "yargs": "^11.0.0"
   },
-  "devDependencies": {}
+  "devDependencies": {
+    "json": "^9.0.6"
+  }
 }

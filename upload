@@ -1,0 +1,25 @@
+#!/bin/bash
+if [ ! -f ./github-release ]; then
+  wget -qO- https://github.com/aktau/github-release/releases/download/v0.7.2/linux-amd64-github-release.tar.bz2 |tar xvj --strip=3
+fi
+
+TAG=v0.1.5
+GH_TOKEN=`./node_modules/.bin/json -f ~/.github.json -c 'console.log(this.OAuth)'`
+
+./github-release release \
+    -s $GH_TOKEN \
+    --user akaJes \
+    --repo jesed \
+    --tag $TAG \
+    --name "jesed"
+
+for file in `ls build`; do
+echo "publicate file  $file"
+./github-release upload \
+    -s $GH_TOKEN \
+    --user akaJes \
+    --repo jesed \
+    --tag $TAG \
+    --name $file \
+    --file build/$file
+done

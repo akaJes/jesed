@@ -2,7 +2,7 @@
 <script>
 function logout() {
   var d = document.createElement('form')
-  d.setAttribute('action', location.href.replace('//', '//logout@') + 'logout')
+  d.setAttribute('action', location.protocol + '//logout@' + location.host + location.pathname)
   d.setAttribute('method', 'post')
   document.querySelector('body').append(d)
   d.submit();
@@ -13,5 +13,5 @@ function logout() {
     <% projects.map(function(p) { %>
       <li class="list-group-item"><a href="<%=p.id%>/"><%=p.name%></a></li>
     <% }) %>
-    <li class="list-group-item list-group-item-danger"><a href="#" onclick="javascript:logout()">Logout</a></li>
+    <li class="list-group-item list-group-item-danger"><a href="?logout" onclick0="javascript:logout()">Logout</a></li>
   </ul>

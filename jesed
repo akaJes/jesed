@@ -4,7 +4,7 @@ const fs = require('fs');
 const path = require('path');
 
 const yargs = require('yargs');
-const opn = require('opn');
+const opn = require('open');
 const prompt = require('prompt');
 
 const {promisify, walk, getAllFiles} = require('./app/helpers');
@@ -14,24 +14,56 @@ const md5 = data => crypto.createHash('md5').update(data).digest("hex");
 
 const config = {};
 
-//create new project file
-fs.copyFile(path.join(__dirname, 'projects.json.dist'), path.join(__dirname, 'projects.json'), fs.constants.COPYFILE_EXCL, err => 0);
-
 const getPass = () =>
   promisify(fs.readFile)('.htdigest')
-  .catch(e => '')
+//  .catch(e => '')
   .then(text => text.toString().split(/\r\n?|\n/).filter(a => a).map(i => i.split(':')))
 
-const getProjects = () =>
-  promisify(fs.readFile)('projects.json')
-  .catch(e => '[]')
+const setProjects = (obj) => promisify(fs.writeFile)('projects.json', JSON.stringify(obj, null, 2)).then(a => obj);
+
+const getProjects = (name) =>
+  promisify(fs.readFile)(name || 'projects.json')
+  .catch(e => promisify(fs.readFile)('projects.json.dist').then(setProjects))
   .then(text => JSON.parse(text.toString()))
+
 
 const setPass = (pass) =>
   Promise.resolve(pass.map(i => i.join(':')).join('\n'))
   .then(text => promisify(fs.writeFile)('.htdigest', text))
 
-yargs
+const promptPass = argv => new Promise((resolve, reject) => {
+    prompt.start();
+    const schema = {
+      properties: {
+        name: {
+          pattern: /^[a-zA-Z\s\-]+$/,
+          message: 'Name must be only letters, spaces, or dashes',
+          required: true,
+        },
+        password: {
+          hidden: true,
+          replace: '*',
+        }
+      }
+    };
+    argv && argv.name && delete schema.properties.name;
+    return promisify(prompt.get)(schema)
+    .then(result => {
+      const pwd = (a, pass) => { a[2] = pass; a[2] = md5(a.join(':')); return a; };
+      const name = argv && argv.name || result.name;
+      getPass().catch(e => [])
+      .then(p =>
+        p.filter(i => i[0] == name).length
+        && p.map(i => i[0] == name && pwd(i, result.password) || i)
+        || (p.push(pwd([name, 'Users', ''], result.password)), p)
+      )
+      .then(setPass)
+      .then(a => console.log('password set'))
+      .then(resolve)
+    });
+})
+
+const args = () => yargs
   .command(['serve [mode]', 's'], 'start the server', (yargs) => {
     yargs
       .positional('mode', {
@@ -48,11 +80,11 @@ yargs
   .command(['users'], 'list available users', {}, (argv) => {
     getPass().then(i => i.map(a => console.log(a[0])))
   })
-  .command(['user <mode> <name>'], 'set or remove allowed users', (yargs) => {
+  .command(['user [mode] [name]'], 'set or remove allowed users', (yargs) => {
     yargs
       .positional('mode', {
         describe: 'set or remove',
-//        default: 'set'
+        default: 'set'
       })
   }, (argv) => {
     if (argv.mode == 'remove') {
@@ -61,41 +93,23 @@ yargs
       .then(setPass)
       .then(a => console.log('password removed'));
     }
-    prompt.start();
-    const schema = {
-      properties: {
-        name: {
-          pattern: /^[a-zA-Z\s\-]+$/,
-          message: 'Name must be only letters, spaces, or dashes',
-          required: true,
-        },
-        password: {
-          hidden: true,
-          replace: '*',
-        }
-      }
-    };
-    delete schema.properties.name; //TODO: make name not required and mode too
-    promisify(prompt.get)(schema)
-    .then(result => {
-      const pwd = (a, pass) => { a[2] = pass; a[2] = md5(a.join(':')); return a; };
-      getPass()
-      .then(p =>
-        p.filter(i => i[0] == argv.name).length
-        && p.map(i => i[0] == argv.name && pwd(i, result.password) || i)
-        || (p.push(pwd([argv.name, 'Users', ''], result.password)), p)
-      )
-      .then(setPass)
-      .then(a => console.log('password set'));
-    });
+    promptPass(argv);
   })
   .option('verbose', {
     alias: 'v',
     default: false
   })
+  .command(['$0'], 'the serve command', () => {}, (argv) => {
+    serve('local');
+  })
   .showHelpOnFail(true)
   .demandCommand(1, '')
   .argv
+
+//create new project file
+promisify(fs.stat)('projects.json')
+.catch(e => getProjects(path.join(__dirname, 'projects.json.dist')).then(setProjects))
+.then(args);
 
 function serve(mode) {
   Promise.all([
@@ -103,16 +117,24 @@ function serve(mode) {
     getProjects(),
     require('./package.json'),
   ])
-  .catch(e => {
-    console.error('missing config', e)
-    process.exit();
-  })
   .then(files => {
     Object.assign(config, files[2].config[mode])
     config.pass = files[0].reduce((p, i) => (p[i[0]] = i[2], p) , {});
     config.projects = files[1];
     server(config);
-    mode == 'local' && opn('http://localhost:' + config.port);
+    if (mode == 'local') {
+      console.log('open in browser url http://localhost:' + config.port);
+      try {
+        opn('http://localhost:' + config.port);
+      } catch(e) {};
+    }
+  })
+  .catch(e => {
+//    console.error('missing config', e)
+    console.error('type `jesed user add` to add user at next time')
+    promptPass()
+    .then(a => serve(mode))
+    .catch(e => process.exit());
   })
 }
 

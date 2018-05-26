@@ -1,10 +1,13 @@
 const path = require('path');
 const fs = require('fs');
+
 const router = module.exports = require('express').Router();
 const formidable = require('formidable');
+const ncp = require('ncp').ncp;
+
 const git = require('../git-tool');
 const promisify = require('../helpers').promisify;
-const ncp = require('ncp').ncp;
+const mime = require('../mime');
 
 const safePath = val => decodeURI(val).replace(/|\.\.|\/\//g, '');
 const getRoot = req => Promise.resolve(req.project.path);
@@ -54,19 +57,23 @@ router.put('/copy/*', (req, res) => {
 router.get('/tree', function(req, res) {
   var dir = safePath(req.query.id);
   dir = dir == '#' && '/' || dir;
-  excludes = ['.', '..'].concat(req.project.excludes || [ '.git', 'node_modules']);
+  excludes = ['.', '..', '.htdigest', 'projects.json'].concat(req.project.excludes || [ '.git', 'node_modules']);
   const data = getRoot(req)
   .then(root => promisify(fs.readdir)(path.join(root, dir))
     .then(list => list.filter(name => name && excludes.indexOf(name) < 0))
-    .then(list => Promise.all(list.map(name => promisify(fs.stat)(path.join(root, dir, name))
-      .then(stats => ({
-        children: stats.isDirectory(),
-        type: stats.isDirectory() ? 'default' : "file",
+    .then(list => Promise.all(list.map(name =>
+//      promisify(fs.stat)(path.join(root, dir, name))
+      mime(path.join(root, dir, name))
+      .then(m => ({
+        children: m.stats.isDirectory(),
+        type: m.stats.isDirectory() ? 'default' : "file",
         text: name,
-        id: path.join(dir, name),
+        mime: m.mime,
+        size: m.stats.size,
+        id: path.join(dir, name).replace(/\\/g, '/'),
 //        icon: stats.isDirectory() ? 'jstree-folder' : "jstree-file",
       }))
-      .catch(e => 0)
+      .catch(e => (console.error(e),0))
     ).filter(i => i))
     )
   )

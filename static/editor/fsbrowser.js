@@ -149,7 +149,7 @@ function fsbrowser(ui, cb) {
 	.on('changed.jstree', function (e, data) {
 		if(data && data.selected && data.selected.length) {
             var name = data.selected.join(':');
-            return cb(name, data.node.type);
+            return cb(data.node.original);
 		}
 	});
 }

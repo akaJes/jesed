@@ -69,15 +69,18 @@ var state;
       var manager = {};     // {path, tab, name, session}
       function createTree(element, editor) {
         fsbrowser($('.tree'), loadFile)
-        function loadFile(path, type){
-          if (type != 'file') ;
-//          if(isTextFile(path))
-//            loadEditor(path);
-          else
-          if(isImageFile(path))
-            loadPreview(services +'file/' + path);
-          else
-            loadEditor(path);
+        function canEdit(mime) {
+          var m = mime.split('/');
+          return  m[0] == 'text' || m[0] == 'application' 
+            && ['xml', 'sql', 'json', 'javascript', 'atom+xml', 'soap+xml', 'xhtml+xml', 'xml-dtd', 'xop+xml' ].indexOf(m[1]) >= 0;
+        }
+        function loadFile(ob) {
+          if (ob.type == 'file')
+            if(canEdit(ob.mime))
+              loadEditor(ob.id);
+            else
+            if (ob.mime.split('/')[0] == 'image')
+              loadPreview(services + 'file' + ob.id);
         };
         function loadEditor(path) {
           var s = manager[path];
@@ -121,14 +124,6 @@ var state;
         function loadPreview(path){
           $('#preview-tab').tab('show')
           $('#previewTab').html('<img src="'+path+'" style="max-width:100%; max-height:100%; margin:auto; display:block;" />');
-        }
-        function isTextFile(path){
-          var ext = (/(?:\.([^.]+))?$/.exec(path)[1]||'').toLowerCase();
-          return 'cpp,c,h,hpp,ino,ini,md,txt,htm,js,c,spp,css,xml'.split(',').indexOf(ext)>=0;
-        }
-        function isImageFile(path){
-          var ext = (/(?:\.([^.]+))?$/.exec(path)[1]||'').toLowerCase();
-          return 'png,jpg,jpeg,webp,apng,pdf,gif,xbm,bmp,ico'.split(',').indexOf(ext)>=0;
         }
         return this;
       }

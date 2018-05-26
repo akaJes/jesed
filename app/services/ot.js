@@ -1,7 +1,7 @@
 const fs = require('fs');
 const path = require('path');
 
-const mmm = require('mmmagic');
+const mime = require('../mime');
 const chokidar = require('chokidar');
 const sio = require('socket.io');
 const ot = require('ot-jes');
@@ -12,8 +12,6 @@ const client = require('../ot-client');
 const ns = {};
 const getFile = (root, file) => promisify(fs.readFile)(path.join(root, file));
 const setFile = (root, file, data) => promisify(fs.writeFile)(path.join(root, file), data);
-const magic = new mmm.Magic(mmm.MAGIC_MIME_TYPE);
-const getMime = (root, file) => promisify(magic.detectFile, magic)(path.join(root, file));
 
 module.exports = (server, project, tokens) => {
   ns[project.ws] = {};
@@ -30,14 +28,22 @@ module.exports = (server, project, tokens) => {
     ignored: project.excludes || /node_modules/,
     persistent: true,
   })
-  .on('change', path => {
-    const docId = '/' + path;
+  .on('change', file => {
+    const docId = '/' + file;
+    mime(path.join(project.path, docId))
+    .then(m => canEdit(m.mime) &&
     Promise.all([getFile(project.path, docId), getDoc(io, project, docId, 'host')])
     .then(p => {
       const ob = p[1], text = p[0];
       client(io, ob, text);
     })
+    )
   })
+}
+function canEdit(mime) {
+  var m = mime.split('/');
+  return  m[0] == 'text' || m[0] == 'application'
+      && ['xml', 'sql', 'json', 'javascript', 'atom+xml', 'soap+xml', 'xhtml+xml', 'xml-dtd', 'xop+xml'].indexOf(m[1]) >=0
 }
 
 function getDoc(io, project, docId, name) {
@@ -45,13 +51,13 @@ function getDoc(io, project, docId, name) {
       if (pp[docId])
         return Promise.resolve(pp[docId])
       else {
-        return Promise.all([getFile(project.path, docId), getMime(project.path, docId)])
+        return Promise.all([getFile(project.path, docId), mime(path.join(project.path, docId))])
         .then(p => {
-          const text = p[0], type = p[1];
-          if (type.indexOf('audio') == 0 || type.indexOf('application') == 0)
-            throw new Error('uneditable format');
+          const text = p[0], m = p[1].mime;
+          if (!canEdit(m))
+            throw new Error('binary format');
           const doc = new ot.EditorSocketIOServer(text.toString(), 0, docId);
-          const ob = pp[docId] = {ot: doc, type: type, id: docId};
+          const ob = pp[docId] = {ot: doc, type: m, id: docId};
           io.of(docId)
           .on('connection', function(socket) {
             function clients(mode) {

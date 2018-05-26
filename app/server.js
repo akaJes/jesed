@@ -42,7 +42,9 @@ passport.use(new Strategy({realm: 'Users', qop: 'auth' }, //password
         return done(null, true);
     }*/
 ));
+
 app.use(session({
+//  store: new FileStore({path: path.join(process.cwd(), 'sessions')}),
   store: new FileStore(),
   secret: 'lazzy keyboard cat',
   resave: false,
@@ -51,7 +53,6 @@ app.use(session({
 
 app.use(passport.initialize());
 app.use(passport.session());
-//app.get('/logout', function(req, res) { res.redirect('/') }) //'//' + req.headers.host + 
 const modAuth = (req, res, next) => {
   const url = req.url;
   const auth = passport.authenticate('digest', { session: true });
@@ -62,17 +63,18 @@ const modAuth = (req, res, next) => {
   })
 }
 app.use(modAuth);//, passport.authenticate('digest', { session: true }));
+const checkAccess = (p, u) => p && u && p.editors && (p.editors.indexOf(u) >= 0 || p.editors.indexOf("*") >= 0);
 const auth = p => (req, res, next) => {
   req.project = p;
   req.session.tokens || (req.session.tokens = {});
-  if (req.isAuthenticated() && p.editors.indexOf(req.user.id) >= 0) {
+  if (req.isAuthenticated() && checkAccess(p, req.user.id)) {
     tokens[p.id][req.sessionID] || (req.session.tokens[p.id] = tokens[p.id][req.sessionID] = {user: req.user.id, token: md5(req.sessionID + new Date().getTime())});
     next();
   } else
     res.redirect('/');
 }
 
-app.use('/nm', express.static(path.join('node_modules')));
+app.use('/nm', express.static(path.join(__dirname, '..', 'node_modules')));
 
   config.projects.map(p => (
     (tokens[p.id] || (tokens[p.id] = {})),
@@ -82,9 +84,12 @@ app.use('/nm', express.static(path.join('node_modules')));
     require('./services/ot')(server, p, tokens[p.id])
   ));
   app.get('/', function(req, res) {
+    if ('logout' in req.query) {
+      return res.status(401).send('<meta http-equiv="refresh" content="0; url=/">');
+    }
     if (req.isAuthenticated()) {
       var list = config.projects
-        .filter(p => p.editors.indexOf(req.user.id) >= 0)
+        .filter(p => checkAccess(p, req.user.id))
       return res.render('login.html', {projects: list});
     }
     res.send('no access')
