@@ -6,8 +6,9 @@ const path = require('path');
 const yargs = require('yargs');
 const opn = require('open');
 const prompt = require('prompt');
+const chokidar = require('chokidar');
 
-const {promisify, walk, getAllFiles} = require('./app/helpers');
+const {promisify, walk, getAllFiles, arrRemove} = require('./app/helpers');
 const server = require('./app/server');
 
 const md5 = data => crypto.createHash('md5').update(data).digest("hex");
@@ -111,6 +112,40 @@ promisify(fs.stat)('projects.json')
 .catch(e => getProjects(path.join(__dirname, 'projects.json.dist')).then(setProjects))
 .then(args);
 
+function watch() {
+  chokidar.watch('.htdigest', {
+    persistent: true,
+  })
+  .on('change', file => {
+     getPass()
+    .then(list => config.pass = list.reduce((p, i) => (p[i[0]] = i[2], p) , {}));
+  })
+
+  chokidar.watch('projects.json', {
+    persistent: true,
+  })
+  .on('change', file => {
+    const diff = (a, b) => a.filter(i => !b.find(j => j.id == i.id))
+    getProjects()
+    .then(now => {
+      //remove
+      arrRemove(config.projects, p => {
+        if (!now.find(i => p.id == i.id))
+          return server.removeProject(p), true;
+      })
+      //add
+      diff(now, config.projects).map(p => {
+        config.projects.push(p)
+        server.addProject(p)
+      });
+      //update
+      config.projects.map(p => {
+        var n = now.find(i => p.id == i.id)
+        n && Object.assign(p, n);
+      })
+    })
+  })
+}
 function serve(mode) {
   Promise.all([
     getPass(),
@@ -121,7 +156,8 @@ function serve(mode) {
     Object.assign(config, files[2].config[mode])
     config.pass = files[0].reduce((p, i) => (p[i[0]] = i[2], p) , {});
     config.projects = files[1];
-    server(config);
+    server.init(config);
+    watch();
     if (mode == 'local') {
       console.log('open in browser url http://localhost:' + config.port);
       try {
@@ -130,7 +166,7 @@ function serve(mode) {
     }
   })
   .catch(e => {
-//    console.error('missing config', e)
+    console.error('missing config', e)
     console.error('type `jesed user add` to add user at next time')
     promptPass()
     .then(a => serve(mode))

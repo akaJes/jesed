@@ -32,6 +32,8 @@ function getFirstFile(paths) {
 
 const unique = a => a.filter((elem, index, self) => index == self.indexOf(elem))
 
+const arrRemove = (arr, cond) => (arr.map((o, i) => cond(o) ? i : -1).reverse().map(i => i >= 0 && arr.splice(i, 1)), arr);
+
 module.exports = {
   promisify,
   atob,
@@ -39,4 +41,5 @@ module.exports = {
   unique,
   walk,
   getAllFiles,
+  arrRemove,
 };

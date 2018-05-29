@@ -3,7 +3,7 @@ if [ ! -f ./github-release ]; then
   wget -qO- https://github.com/aktau/github-release/releases/download/v0.7.2/linux-amd64-github-release.tar.bz2 |tar xvj --strip=3
 fi
 
-TAG=v0.1.5
+TAG=v`./node_modules/.bin/json -f package.json -c 'console.log(this.version)'`
 GH_TOKEN=`./node_modules/.bin/json -f ~/.github.json -c 'console.log(this.OAuth)'`
 
 ./github-release release \

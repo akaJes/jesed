@@ -16,14 +16,15 @@ const setFile = (root, file, data) => promisify(fs.writeFile)(path.join(root, fi
 module.exports = (server, project, tokens) => {
   ns[project.ws] = {};
   const io = new sio(server, {path: project.ws});
-  io.on('connection', function(socket) {
+  io.on('connection', connection)
+  function connection(socket) {
     socket.on('ns', function (docId, token, name) {
       if (Object.keys(tokens).map(i => tokens[i].token).indexOf(token) < 0) return;
       getDoc(io, project, docId, name)
         .then(ob => socket.emit('ns', docId, ob.type))
         .catch(e => console.error(e))
     });
-  });
+  }
   chokidar.watch(project.path + '**', {
     ignored: project.excludes || /node_modules/,
     persistent: true,
@@ -39,6 +40,11 @@ module.exports = (server, project, tokens) => {
     })
     )
   })
+  return function() {
+    io.removeListener('connection', connection);
+    io.path("recycled" + new Date().getTime());
+    delete io;
+  }
 }
 function canEdit(mime) {
   var m = mime.split('/');
