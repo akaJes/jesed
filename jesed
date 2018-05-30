@@ -81,6 +81,10 @@ const args = () => yargs
   .command(['users'], 'list available users', {}, (argv) => {
     getPass().then(i => i.map(a => console.log(a[0])))
   })
+  .command(['config'], 'copy configuration files to this folder', {}, (argv) => {
+    ['apache', 'jesed.conf', 'jesed.json'].map(i =>
+    promisify(fs.copyFile)(path.join(__dirname, 'config', i), i));
+  })
   .command(['user [mode] [name]'], 'set or remove allowed users', (yargs) => {
     yargs
       .positional('mode', {

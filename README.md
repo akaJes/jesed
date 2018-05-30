@@ -12,29 +12,20 @@ used the best multifunction web editor [ACE](https://ace.c9.io/) ever
 
 the [GIT](https://git-scm.com/) is strongly recomended to install as dependency
 ### Binary installation
-download https://github.com/akaJes/jesed/releases and run
-
-enter your credentials and open http://localhost:3000/
+just download https://github.com/akaJes/jesed/releases to some project folder(with git) and run
 ### NPM installation
-```
-mkdir jesed ; cd jesed
-npm i jesed
-./jesed
-```
-enter your credentials and open http://localhost:3000/
+`sudo npm i -g jesed` choose some project folder(with git) and type `jesed`
+### Startup local
+enter your credentials and open http://localhost:3000/ (do not close application)
 #### Type for help
-`./jesed --help`
+`jesed --help`
 #### Create new User
-`./jesed user add me`
+`jesed user add me`
 #### Add/modify projects
 Modify the `projects.json` for your desire with your favorite editor
-#### For local use
-the application must be opened
-#### For use with apache as service
+#### For use with Apache webserver as PM2 service
 ```
-sudo npm i -g pm2
-sudo pm2 start package.json
-cd config
+jesed config
 sudo ./apache
 ```
 open in your browser http://your-domain/jesed/ link

@@ -1,4 +1,7 @@
 #!/bin/bash
+sudo npm i -g pm2
+pm2 start jesed.json
+
 sudo cp jesed.conf /etc/apache2/conf-available
 sudo a2enconf jesed
 sudo a2enmod rewrite
