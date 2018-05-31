@@ -75,7 +75,7 @@ function getDoc(io, project, docId, name) {
             throw new Error('binary format');
           const doc = new ot.EditorSocketIOServer(text.toString(), 0, docId);
           const ob = pp[docId] = {ot: doc, type: m, id: docId};
-          io.of(docId)
+          io.of(docId.replace(/ /g, ':'))
           .on('connection', function(socket) {
             function clients(mode) {
               socket.broadcast.in(docId).emit('clients', {clients: doc.users, mode: mode});
@@ -84,7 +84,7 @@ function getDoc(io, project, docId, name) {
             doc.addClient(socket);
             name && doc.setName(socket, name);
             clients('enter');
-            socket.in(docId)
+            socket.in(docId.replace(/ /g, ':'))
             .on('disconnect', function() {
               delete doc.users[socket.id];
               clients('leave');

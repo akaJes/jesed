@@ -104,6 +104,7 @@ var state;
               editor.setSession(s.session);
               editor.setReadOnly(s.session.disconnected);
               editor.dmp && editor.dmp.scan();
+              editor.focus();
             }).tab('show');
             //close
             tab.find('button').on('click', function(ev) {

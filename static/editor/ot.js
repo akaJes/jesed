@@ -33,7 +33,7 @@ ace.define("ot", function(require, exports, module) {
         }
         socket.on('ns', function(dir, type) {
           var ss = manager[dir];
-          var s = ss.socket = io.connect(dir, {path: sockPath});
+          var s = ss.socket = io.connect(dir.replace(/ /g, ':'), {path: sockPath});
           var cli = ss.ot = new ot.Client(0);
           var session = ss.session;
           ss.dc = debounce(scan, 1000);

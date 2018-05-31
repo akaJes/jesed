@@ -17,14 +17,21 @@ function fsbrowser(ui, cb) {
     })
     ui.after(upload);
     ui.after(download);
+    function filterRow(row) {
+      return row.changed && Object.assign(row, {a_attr: {style: 'color:red'}}) || row;
+    }
 	ui.jstree({
 		'core' : {
-			'data' : {
-			    'url' : services + 'tree',
-			    'data' : function (node) {
-				return { 'id' : node.id };
-			    }
-			},
+            data : function (node, cb) {
+              $.ajax({url: services + 'tree', data:{id: node.id}})
+              .then(function (data) {
+                if(data.children)
+                   data.children = data.children.map(filterRow);
+                else
+                   data = data.map(filterRow);
+                cb(data);//[{ "id" : data.id, "text" : data.name }])
+              });
+            },
 			'check_callback' : function(o, n, p, i, m) {
 			    if(m && m.dnd && m.pos !== 'i') { return false; }
 			    if(o === "move_node" || o === "copy_node") {
@@ -65,7 +72,7 @@ function fsbrowser(ui, cb) {
 				    },
 				    "create_file" : {
 				      "label"				: "File",
-				      "action"			: action({type : "file", icon: 'jstree-file' }),
+				      "action"			: action({type : "file", icon: 'jstree-file', mime: 'text/plain'}),
 				    }
 			      };
                   if (node.state.opened) {
@@ -121,6 +128,7 @@ function fsbrowser(ui, cb) {
             )
 			.done(function (d) {
 			    data.instance.set_id(data.node, d.id);
+                data.node.original.id = d.id;
 			})
 			.fail(function () {
 			    data.instance.refresh();
