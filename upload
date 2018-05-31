@@ -5,21 +5,11 @@ fi
 
 TAG=v`./node_modules/.bin/json -f package.json -c 'console.log(this.version)'`
 GH_TOKEN=`./node_modules/.bin/json -f ~/.github.json -c 'console.log(this.OAuth)'`
+CRED="-s $GH_TOKEN --user akaJes --repo jesed --tag $TAG"
 
-./github-release release \
-    -s $GH_TOKEN \
-    --user akaJes \
-    --repo jesed \
-    --tag $TAG \
-    --name "jesed"
+./github-release release $CRED --name "jesed"
 
 for file in `ls build`; do
-echo "publicate file  $file"
-./github-release upload \
-    -s $GH_TOKEN \
-    --user akaJes \
-    --repo jesed \
-    --tag $TAG \
-    --name $file \
-    --file build/$file
+  echo "publicate file  $file"
+  ./github-release upload $CRED --name $file --file build/$file
 done

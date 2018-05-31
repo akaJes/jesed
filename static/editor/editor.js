@@ -162,6 +162,19 @@ var state;
             editor.setReadOnly(true);
           state.text(text)
         });
+        otI.socket.on('users', function(users) {
+          var u = $('.jesed-users .dropdown-menu').empty();
+          var len = Object.keys(users).map(function(i) {
+            u.append('<a class="dropdown-item" href="#"> ' + users[i].auth + ' (' + users[i].ip +')</a>')
+          })
+          u.parent().find('button span').text(len.length);
+        });
+        $('.jesed-invite').on('click', function(){
+          $.get('s/auth')
+          .then(function(invite) {
+            prompt('invite url', location.origin + location.pathname + '?invite=' + invite);
+          })
+        })
         0 && config.then(function(data){
           otI.setName(data.name);
         })

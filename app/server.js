@@ -22,11 +22,28 @@ app.set('view engine', 'ejs');
 app.engine('.html', require('ejs').renderFile);
 
 app.use(require('body-parser').urlencoded({ extended: false }));
-
+const invites = {};
 const tokens = {};
-const checkAccess = (p, u) => p && u && p.editors && (p.editors.indexOf(u) >= 0 || p.editors.indexOf("*") >= 0);
+const checkAccess = (p, u, l) => p && u && (invites[u] && invites[u].project == p.id || p.editors && p.editors.indexOf(u) >= 0 || p.editors.indexOf("*") >= 0);
+const isInvited = (req) => {
+  var yes = req.user;
+  if ('invite' in req.query) {
+    yes = invites[req.query.invite];
+    if (yes)
+      req.login({id: req.query.invite, name: yes.name}, function(){})
+    else
+      req.logout();
+  }
+  return req.isAuthenticated();
+}
+
 const auth = p => (req, res, next) => {
   req.project = p;
+  req.createInvite = function(name) {
+    const id = md5(req.sessionID + new Date().getTime());
+    invites[id] = {name: name, project: p.id};
+    return id;
+  }
   req.session.tokens || (req.session.tokens = {});
   if (req.isAuthenticated() && checkAccess(p, req.user.id)) {
     tokens[p.id][req.sessionID] || (req.session.tokens[p.id] = tokens[p.id][req.sessionID] = {user: req.user.id, token: md5(req.sessionID + new Date().getTime())});
@@ -59,6 +76,7 @@ passport.serializeUser(function(user, done) {
   done(null, user.id);
 });
 passport.deserializeUser(function(id, done) {
+  const name = invites[id] && invites[id].name || id;
   done(null, {id: id, name: id });
 });
 
@@ -85,6 +103,8 @@ app.use(passport.initialize());
 app.use(passport.session());
 const modAuth = (req, res, next) => {
   const url = req.url;
+  if (isInvited(req))
+    return next();
   const auth = passport.authenticate('digest', { session: true });
   req.url = (config.baseURI || '') + req.url;
   auth(req, res, () => {
@@ -98,6 +118,7 @@ app.use('/nm', express.static(path.join(__dirname, '..', 'node_modules')));
   config.projects.map(exports.addProject)
   app.get('/', function(req, res) {
     if ('logout' in req.query) {
+      req.logout();
       return res.status(401).send('<meta http-equiv="refresh" content="0; url=/">');
     }
     if (req.isAuthenticated()) {

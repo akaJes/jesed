@@ -14,19 +14,29 @@ const getFile = (root, file) => promisify(fs.readFile)(path.join(root, file));
 const setFile = (root, file, data) => promisify(fs.writeFile)(path.join(root, file), data);
 
 module.exports = (server, project, tokens) => {
-  ns[project.ws] = {};
+  const pp = ns[project.ws] = {docs: {}, users: {}};
   const io = new sio(server, {path: project.ws});
   io.on('connection', connection)
   function connection(socket) {
+    const sh = socket.handshake.headers
+    const user = pp.users[socket.id] = {ip: sh['x-forwarded-for'], auth: sh.authorization && sh.authorization.split(',')[0].split('=')[1].slice(1, -1)};
     socket.on('ns', function (docId, token, name) {
-      if (Object.keys(tokens).map(i => tokens[i].token).indexOf(token) < 0) return;
+      var t = Object.keys(tokens).map(i => tokens[i]).filter(i => i.token == token)
+      if (!t.length) return;
+      user.auth || (user.auth = t[0].user);
+      socket.broadcast.emit('users', pp.users);
       getDoc(io, project, docId, name)
-        .then(ob => socket.emit('ns', docId, ob.type))
+        .then(ob => socket.emit('ns', docId, ob.type),socket.emit('users', pp.users))
         .catch(e => console.error(e))
     });
+    socket.on('disconnect', function() {
+      delete pp.users[socket.id];
+      socket.broadcast.emit('users', pp.users);
+    })
   }
-  chokidar.watch(project.path + '**', {
-    ignored: project.excludes || /node_modules/,
+  var host = chokidar.watch('**', {
+    cwd: path.resolve(project.path),
+    ignored: ['node_modules', '.git'].concat(project.excludes),
     persistent: true,
   })
   .on('change', file => {
@@ -41,6 +51,7 @@ module.exports = (server, project, tokens) => {
     )
   })
   return function() {
+    host.close();
     io.removeListener('connection', connection);
     io.path("recycled" + new Date().getTime());
     delete io;
@@ -53,7 +64,7 @@ function canEdit(mime) {
 }
 
 function getDoc(io, project, docId, name) {
-      const pp = ns[project.ws];
+      const pp = ns[project.ws].docs;
       if (pp[docId])
         return Promise.resolve(pp[docId])
       else {

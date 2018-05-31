@@ -13,9 +13,11 @@
     <link  href="../nm/@fortawesome/fontawesome-free-webfonts/css/fontawesome.css" rel="stylesheet">
     <link  href="../nm/@fortawesome/fontawesome-free-webfonts/css/fa-solid.css" rel="stylesheet">
 <!--<script src="/nm/tether/dist/js/tether.min.js"></script>-->
+    <script src="../nm/popper.js/dist/umd/popper.min.js"></script>
     <script src="../nm/bootstrap/dist/js/bootstrap.min.js"></script>
     <script src="../nm/socket.io-client/dist/socket.io.js"></script>
     <script src="../nm/ot-jes/dist/ot.js"></script>
+    <script src="../nm/clipboard/dist/clipboard.js"></script>
     <link  href="../nm/vex-js/dist/css/vex.css" rel="stylesheet">
     <link  href="../nm/vex-js/dist/css/vex-theme-os.css" rel="stylesheet">
     <script src="../nm/vex-js/dist/js/vex.combined.js"></script>
@@ -39,6 +41,15 @@ module = {};
   <div>
     <button class="btn btn-sm m-1" onclick="$('.tree').toggle()" style="float: left;" title="toggle filebrowser window"><i class="fas fa-chevron-left"></i></button>
     <button class="btn btn-sm m-1" onclick="toggleFullScreen()" style="float: left;" title="fullscreen"><i class="fas fa-arrows-alt"></i></button>
+    <button class="btn btn-sm m-1 jesed-invite" style="float: left;" title="create and copy to clipboard new invite"><i class="fas fa-user-plus"></i></button>
+    <div class="btn-group m-1 jesed-users" style="float: left;" >
+      <button class="btn btn-sm dropdown-toggle" type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+        <i class="fas fa-users"></i> <span>0</span>
+      </button>
+      <div class="dropdown-menu">
+        <div class="dropdown-divider"></div>
+      </div>
+    </div>
     <button type="button" class="btn btn-warning btn-sm m-1" style="float: left;display:none;" title="share workflow to friends">QR</button>
     <ul class="nav nav-tabs nav-scroll" id="myTab" role="tablist" style="margin-left: 75px;">
       <li class="nav-item">
