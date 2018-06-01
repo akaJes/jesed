@@ -20,10 +20,31 @@ function fsbrowser(ui, cb) {
     function filterRow(row) {
       return row.changed && Object.assign(row, {a_attr: {style: 'color:red'}}) || row;
     }
+    var changed, grep;
+    $('.jesed-changed').on('click', function() {
+      changed = $(this).hasClass('active') ? undefined : 0;
+      ui.jstree('refresh');
+    })
+    $('.jesed-grep').on('change', function() {
+      var v = $(this).val();
+      if (v.length > 3) {
+        $('.jesed-grepon').prop('checked', true);
+        grep = v;
+        ui.jstree('refresh');
+      }
+    })
+    $('.jesed-grepon').on('change', function() {
+      if ($(this).prop('checked'))
+        $('.jesed-grep').trigger('change');
+      else {
+        grep = undefined
+        ui.jstree('refresh');
+      }
+    });
 	ui.jstree({
 		'core' : {
             data : function (node, cb) {
-              $.ajax({url: services + 'tree', data:{id: node.id}})
+              $.ajax({url: services + 'tree', data:{id: node.id, c: changed, g: grep}})
               .then(function (data) {
                 if(data.children)
                    data.children = data.children.map(filterRow);
@@ -159,5 +180,13 @@ function fsbrowser(ui, cb) {
             var name = data.selected.join(':');
             return cb(data.node.original);
 		}
-	});
+	})
+    .on('ready.jstree', function () {
+      var path = location.hash.split('#')[1], open = [path];
+      if (path) {
+        while (open[open.length - 1].length)
+          open.push(open[open.length - 1].split('/').slice(0, -1).join('/'))
+        ui.jstree().set_state({core: {selected: [path], open: open }});
+      }
+    })
 }

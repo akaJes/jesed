@@ -6,7 +6,7 @@ const formidable = require('formidable');
 const ncp = require('ncp').ncp;
 
 const git = require('../git-tool');
-const promisify = require('../helpers').promisify;
+const {promisify, walk} = require('../helpers');
 const mime = require('../mime');
 const sgit = require('simple-git');
 
@@ -55,18 +55,22 @@ router.put('/copy/*', (req, res) => {
 })
 
 //list
+const checkChange = (files, dir, name) => {
+  const file = path.join(dir, name).slice(1);
+  return files.filter(i => i.slice(0, file.length) == file).length;
+}
+const findInFile = (file, val) => promisify(fs.readFile)(file).then(text => new RegExp(val).test(text));
 router.get('/tree', function(req, res) {
   var dir = safePath(req.query.id);
   dir = dir == '#' && '/' || dir;
-console.log(dir);
   excludes = ['.', '..', '.htdigest', 'projects.json'].concat(req.project.excludes || [ '.git', 'node_modules']);
   const data = getRoot(req)
   .then(root => Promise.all([
       promisify(fs.readdir)(path.join(root, dir)).then(list => list.filter(name => name && excludes.indexOf(name) < 0)),
       promisify(sgit(root).status, sgit(root))(),
+      'g' in req.query && walk(root).then(list => Promise.all(list.filter(i => excludes.indexOf(i) < 0).map(i => findInFile(i, req.query.g).then(a => a && path.relative(root, i)).catch(e => 0))).then(list => list.filter(i => i))),
     ])
     .then(p => Promise.all(p[0].map(name =>
-//      promisify(fs.stat)(path.join(root, dir, name))
       mime(path.join(root, dir, name))
       .then(m => ({
         children: m.stats.isDirectory(),
@@ -74,14 +78,16 @@ console.log(dir);
         text: name,
         mime: m.mime,
         size: m.stats.size,
-        changed: p[1].files.filter(i => i.path == path.join(dir, name).slice(1)).length,
+        changed: checkChange(p[1].files.map(i => i.path), dir, name),
         id: path.join(dir, name).replace(/\\/g, '/'),
-//        icon: stats.isDirectory() ? 'jstree-folder' : "jstree-file",
+        filter: p[2] ? checkChange(p[2], dir, name) : true,
       }))
       .catch(e => (console.error(e),0))
     ).filter(i => i))
     )
   )
+  .then(list => 'c' in req.query && list.filter(i => i.changed) || list)
+  .then(list => list.filter(i => i && i.filter ))
   .then(list => dir != '/' && list || {text: req.project.name, children: list, id: '/', type: 'default', state: {opened: true, disabled: true}})
   send(data, res);
 })

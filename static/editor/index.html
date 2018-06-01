@@ -58,7 +58,25 @@ module = {};
     </ul>
   </div>
     <div class="tabs-content stickit">
-      <div class="tree"></div>
+    <div>
+    <div class="stickit top">
+      <div class="navover" style="background-color: beige;">
+        <button type="button" class="btn btn-secondary btn-sm m-1 jesed-changed" data-toggle="button" aria-pressed="false" autocomplete="off" title="show only changed"><i class="fas fa-feather"></i></button>
+        <div class="d-inline-block">
+          <div class="input-group input-group-sm" style="width:200px;">
+            <div class="input-group-prepend">
+              <span class="input-group-text" id="inputGroup-sizing-sm">grep</span>
+            </div>
+            <input type="text" class="form-control jesed-grep" aria-label="Small" aria-describedby="inputGroup-sizing-sm">
+            <div class="input-group-append">
+              <span class="input-group-text"><input type="checkbox" class="jesed-grepon" aria-label="Checkbox for following text input"></span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="tree h-100"></div>
+    </div>
+    </div>
       <div class="tab-content w-100" id="myTabContent">
         <div id="previewTab" class="tab-pane fade show active h-100" role="tabpanel" aria-labelledby="preview-tab">
         </div>

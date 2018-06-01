@@ -1,6 +1,6 @@
 {
   "name": "jesed",
-  "version": "0.1.9",
+  "version": "0.1.10",
   "description": "online instant collaborative editor",
   "main": "./jesed",
   "scripts": {

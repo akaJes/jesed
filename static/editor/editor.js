@@ -30,6 +30,7 @@ var state;
           if (!editor.getSelectedText()) return;
           var beautify = ace.require("ace/ext/beautify"); // get reference to extension
           var session = ace.createEditSession('', editor.session.getOption('mode'));
+          session.setTabSize(editor.session.getTabSize());
 //          var sel = editor.session.getSelection();
           var range = editor.selection.getRange();
           range.start.column = 0;
@@ -105,6 +106,15 @@ var state;
               editor.setReadOnly(s.session.disconnected);
               editor.dmp && editor.dmp.scan();
               editor.focus();
+              $('.jesed-grepon').prop('checked') &&
+              ace.config.loadModule("ace/ext/searchbox", function(m) {
+                m.Search(editor);
+                var sb = editor.searchBox
+                sb.searchInput.value = $('.jesed-grep').val();
+                sb.regExpOption.checked = true;
+                sb.$syncOptions()
+                sb.find(true, false);
+              })
             }).tab('show');
             //close
             tab.find('button').on('click', function(ev) {
@@ -173,7 +183,8 @@ var state;
         $('.jesed-invite').on('click', function(){
           $.get('s/auth')
           .then(function(invite) {
-            prompt('invite url', location.origin + location.pathname + '?invite=' + invite);
+            var cp = editor.getCursorPosition();
+            prompt('invite url', location.origin + location.pathname + '?invite=' + invite + '#' + editor.session.path + '#' + [cp.row + 1, cp.column]);
           })
         })
         0 && config.then(function(data){
@@ -197,7 +208,11 @@ var state;
             editor.setOptions({setBaseText: dataGit[0] })
 if(0)
             editor.setValue(data[0]);
-            editor.gotoLine(0);
+            var path = location.hash.split('#'), pos = (path[2] || '').split(',');
+            if (path[1] == editor.session.path)
+              editor.gotoLine(pos[0], pos[1]);
+            else
+              editor.gotoLine(0);
             editor.getSession()._signal("changeAnnotation", {}); //TODO: bug update
             state.text('opened!');
           },function(data){
