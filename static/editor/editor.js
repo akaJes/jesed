@@ -14,19 +14,19 @@ var state;
         function addButton(name, fn, title) {
           $(element).append($('<button>').addClass('btn btn-sm m-1').html(name).on('click', fn).attr('title', title));
         }
-//        addButton('<<',function(e){ $('.jstree').toggle(); });
-//        addButton('A',function(e){ toggleFullScreen(); });
+        function addToggleButton(name, cls, title, fn) {
+          $(element).append($('<button type="button" class="btn btn-sm" data-toggle="button" aria-pressed="false" autocomplete="off">')
+            .addClass(cls).html(name).on('click', fn).attr('title', title).attr('aria-pressed', cls.indexOf('active') >= 0));
+        }
 //        addButton('Save',function(e){ editor.execCommand("saveCommand") });
-        $(element).append(
-          $('<button type="button" class="btn btn-sm btn-primary active" data-toggle="button" aria-pressed="false" autocomplete="off"><i class="fas fa-save"></i></button>')
-          .on('click', function() {
+        addToggleButton('<i class="fas fa-save"></i>','btn-info active','disable auto save',
+          function() {
             otI.setAutoSave(!$(this).hasClass('active'));
-          })
-          .attr('title', 'disable auto save')
-        );
+          });
         addButton('<i class="fas fa-chevron-down"></i>',function(e){ editor.execCommand("nextDiff") }, 'seek for next diff');
         addButton('<i class="fas fa-chevron-up"></i>',function(e){ editor.execCommand("prevDiff") }, 'seek for previous diff');
-        addButton('<i class="fas fa-code"></i>', function(e) {
+        addButton('<i class="fas fa-code"></i>', function(e) { editor.execCommand("beautify"); }, 'beautify JS code');
+        function beautify(editor) {
           if (!editor.getSelectedText()) return;
           var beautify = ace.require("ace/ext/beautify"); // get reference to extension
           var session = ace.createEditSession('', editor.session.getOption('mode'));
@@ -44,7 +44,16 @@ var state;
             b = b.split(/\r\n?|\n/).map(function(line){ return space[0] + line;}).join('\n');
           editor.session.doc.replace(range, b);
           editor._signal("change", {});
-        }, 'beauitify JS code');
+        }
+        var beautifyCmd = {
+	        name: "beautify",
+	        exec: function(editor) {
+				    beautify(editor);
+	        },
+	        bindKey: {win: "Ctrl-Alt-f", mac: "Command-Alt-f"}
+		    };
+	      editor.commands.addCommand(beautifyCmd);
+
         myName ||
         addButton('<i class="fas fa-user"></i>',function(e){
           if(isElectron()) {
@@ -64,6 +73,18 @@ var state;
           }
         }, 'set Your name for collaborative editing');
         addButton('<i class="fas fa-undo"></i>',function(e){ editor.getSession().getUndoManager().undo(false); }, 'undo');
+        addButton('<i class="fas fa-keyboard"></i>',function(e){
+          ace.config.loadModule("ace/ext/keybinding_menu", function(module) {
+            module.init(editor);
+            editor.showKeyboardShortcuts();
+          });
+        }, 'help');
+        addButton('<i class="fas fa-wrench"></i>',function(e){
+          ace.config.loadModule("ace/ext/settings_menu", function(module) {
+              module.init(editor);
+              editor.showSettingsMenu();
+          });
+        }, 'options');
         $(element).append(state = $('<span class="m-1">Loading...</span>'));
       }
 
@@ -164,13 +185,21 @@ var state;
       function createEditor(element, file, lang, theme, type){
         var editor = ace.edit(element);
         require('ace/ext/beautify');
+        require("ace/ext/language_tools");
+        editor.setOptions({
+          enableBasicAutocompletion: true,
+          enableSnippets: true,
+          enableLiveAutocompletion: !false
+        });
         var MT = require("marker_tooltip");
         new MT(editor)
         require('diff');
         var OT = require("ot");
         otI = new OT(manager, function(text) {
-          if (text == 'torn')
+          if (text == 'offline')
             editor.setReadOnly(true);
+          if (text == 'online')
+            editor.setReadOnly(false);
           state.text(text)
         });
         otI.socket.on('users', function(users) {

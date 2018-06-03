@@ -29,7 +29,7 @@ ace.define("ot", function(require, exports, module) {
             for(var s in manager)
               scan(manager[s]);
           else
-            state('frozed.')
+            state('frozen.')
         }
         socket.on('ns', function(dir, type) {
           var ss = manager[dir];
@@ -53,11 +53,18 @@ ace.define("ot", function(require, exports, module) {
             var end = session.doc.positionToIndex(range.end);
             return ot.Selection.fromJSON([{anchor: start, head: end}]);
           }
+          s.on('reconnect', function() {
+            s.emit('doc');
+            console.log('recon');
+          })
           s.on('doc', function (ob) {
             session.otDoc = ob.str;
             session.setValue(ob.str);
             session.remoteNames = ob.clients;
             cli.revision = ob.revision; // hack
+            session.disconnected = false;
+            state('online');
+          });
             session.getSelection().on('changeSelection', function(e, sel){
               if (!sel.isEmpty()) {
                 var range = sel.getRange();
@@ -70,7 +77,6 @@ ace.define("ot", function(require, exports, module) {
               !s.connected && state('diconnected');
               s.emit('selection', getOtSel(range));
             });
-          });
           cli.sendOperation = function (revision, operation) {
             state('sending...')
             var range = session.getSelection().getRange();
@@ -87,12 +93,11 @@ ace.define("ot", function(require, exports, module) {
           });
           s.on('ack', function () {
             state('stored')
-            //s.emit('ack'); // ??
             cli.serverAck();
           });
           s.on('disconnect', function () {
             session.disconnected = true;
-            state('torn');
+            state('offline');
           });
           s.on('selection', function (clientId, selection) {
             var range= {start: selection.ranges[0].anchor, end: selection.ranges[0].head};

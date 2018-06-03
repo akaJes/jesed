@@ -7,6 +7,12 @@ const mt = require('mime-types');
 
 const {promisify} = require('./helpers');
 
+const canEdit = mime => {
+  var m = mime.split('/');
+  return  m[0] == 'text' || m[0] == 'application'
+      && ['xml', 'sql', 'json', 'javascript', 'atom+xml', 'soap+xml', 'xhtml+xml', 'xml-dtd', 'xop+xml'].indexOf(m[1]) >=0
+}
+
 module.exports = (name) =>
   promisify(fs.stat)(name)
   .then(stats => Promise.all([
@@ -17,4 +23,4 @@ module.exports = (name) =>
   .then(a => a[2] && promisify(fs.read)(a[2], a[1], 0, a[1].length, null).then(f => a) || a)
   .then(a => [a[0], path.parse(name).ext, ft(a[1]), isBinary(a[1].toString()), mt.lookup(path.parse(name).base)])
   .then(a => a.slice(0, 2).concat(a[2] && a[2].mime || a[3] && 'application/octet-stream' || 'text/plain'))
-  .then(a => ({exts: a[1], mime: a[2], stats: a[0]}))
+  .then(a => ({exts: a[1], mime: a[2], stats: a[0], editable: canEdit(a[2])}))

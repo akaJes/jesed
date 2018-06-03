@@ -60,6 +60,15 @@ const checkChange = (files, dir, name) => {
   return files.filter(i => i.slice(0, file.length) == file).length;
 }
 const findInFile = (file, val) => promisify(fs.readFile)(file).then(text => new RegExp(val).test(text));
+const regexpFolder = (root, val) =>
+  walk(root).then(list => Promise.all(list
+    .filter(i => excludes.indexOf(i) < 0)
+    .map(i => mime(i)
+      .then(m => m.editable && findInFile(i, val))
+      .then(a => a && path.relative(root, i))
+      .catch(e => 0)
+    ))
+  .then(list => list.filter(i => i)))
 router.get('/tree', function(req, res) {
   var dir = safePath(req.query.id);
   dir = dir == '#' && '/' || dir;
@@ -68,7 +77,7 @@ router.get('/tree', function(req, res) {
   .then(root => Promise.all([
       promisify(fs.readdir)(path.join(root, dir)).then(list => list.filter(name => name && excludes.indexOf(name) < 0)),
       promisify(sgit(root).status, sgit(root))(),
-      'g' in req.query && walk(root).then(list => Promise.all(list.filter(i => excludes.indexOf(i) < 0).map(i => findInFile(i, req.query.g).then(a => a && path.relative(root, i)).catch(e => 0))).then(list => list.filter(i => i))),
+      'g' in req.query && regexpFolder(path.join(root, dir), req.query.g).then(list => list.map(i => path.join(dir, i).slice(1))),
     ])
     .then(p => Promise.all(p[0].map(name =>
       mime(path.join(root, dir, name))
