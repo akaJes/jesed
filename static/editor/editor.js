@@ -15,7 +15,7 @@ var state;
           $(element).append($('<button>').addClass('btn btn-sm m-1').html(name).on('click', fn).attr('title', title));
         }
         function addToggleButton(name, cls, title, fn) {
-          $(element).append($('<button type="button" class="btn btn-sm" data-toggle="button" aria-pressed="false" autocomplete="off">')
+          $(element).append($('<button type="button" class="btn btn-sm m-1" data-toggle="button" aria-pressed="false" autocomplete="off">')
             .addClass(cls).html(name).on('click', fn).attr('title', title).attr('aria-pressed', cls.indexOf('active') >= 0));
         }
 //        addButton('Save',function(e){ editor.execCommand("saveCommand") });
@@ -85,9 +85,18 @@ var state;
               editor.showSettingsMenu();
           });
         }, 'options');
-        $(element).append(state = $('<span class="m-1">Loading...</span>'));
+        addToggleButton('<i class="fas fa-file-alt"></i>','btn-info jesed-scroll','keep scrolling down',
+          function() {
+            var ob = manager[editor.session.path];
+            ob.scrollDown = !ob.scrollDown;
+          });
+        $(element).append(state = $(' <span class="m-1">Loading...</span>'));
       }
-
+      function syncToggleButtons(editor) {
+        var ob = manager[editor.session.path];
+        if (!!ob.scrollDown != $('.jesed-scroll').hasClass('active'))
+          $('.jesed-scroll').button('toggle')
+      }
       var manager = {};     // {path, tab, name, session}
       function createTree(element, editor) {
         fsbrowser($('.tree'), loadFile)
@@ -101,8 +110,8 @@ var state;
             if(canEdit(ob.mime))
               loadEditor(ob.id);
             else
-            if (ob.mime.split('/')[0] == 'image')
-              loadPreview(services + 'file' + ob.id);
+            if (['image', 'audio', 'video'].indexOf(ob.mime.split('/')[0]) >= 0)
+              loadPreview(services + 'file' + ob.id, ob.mime);
         }
         function loadEditor(path) {
           var s = manager[path];
@@ -126,9 +135,9 @@ var state;
               state.text('');
               $(this).find('span').text('');
               editor.setSession(s.session);
-              editor.setReadOnly(s.session.disconnected);
+              editor.setReadOnly(s.disconnected);
               editor.dmp && editor.dmp.scan();
-              if (s.session.getMode().id == "ace/mode/javascript") {
+              if (s.session.getMode().$id == "ace/mode/javascript") {
                 var w = s.session.$worker;
                 w && w.send("changeOptions", [{
                   asi: true,    //supress semicolon warning
@@ -136,6 +145,9 @@ var state;
                 }]);
               }
               editor.focus();
+              syncToggleButtons(editor);
+              if (s.scrollDown)
+                editor.gotoLine(Infinity);
               $('.jesed-grepon').prop('checked') &&
               ace.config.loadModule("ace/ext/searchbox", function(m) {
                 m.Search(editor);
@@ -162,9 +174,16 @@ var state;
             s.tab.find('a').tab('show')
           }
         }
-        function loadPreview(path){
+        function loadPreview(path, mime) {
           $('#preview-tab').tab('show')
-          $('#previewTab').html('<img src="'+path+'" style="max-width:100%; max-height:100%; margin:auto; display:block;" />');
+          var style = ' style="max-width:100%; max-height:100%; margin:auto; display:block;" ';
+          var html = '<img src="'+path+'"' + style + '/>';
+          var type = mime.split('/')[0];
+          if (type == 'video')
+            html = '<video width="100%"' + style + ' controls><source src="' + path + '" type="' + mime + '">Your browser does not support HTML5 video.</video>';
+          if (type == 'audio')
+            html = '<audio ' + style + ' controls><source src="' + path + '" type="' + mime + '">Your browser does not support the audio element.</audio>';
+          $('#previewTab').html(html);
         }
         return this;
       }
@@ -191,6 +210,8 @@ var state;
             var ob = manager[docId];
             if (ob && !ob.isActive())
               ob.tab.find('span').text(parseInt(ob.tab.find('span').text() || 0) + 1)
+            if (ob && ob.isActive() && ob.scrollDown)
+                editor.gotoLine(Infinity);
             return
           }
           state.text(text)
@@ -199,7 +220,7 @@ var state;
           if (type == 'unlink') {
             var ob = manager[docId];
             if (ob) {
-              ob.session.disconnected = true;
+              ob.disconnected = true;
               if(ob.isActive()) {
                 editor.setReadOnly(true);
                 state.text('removed')
@@ -246,7 +267,7 @@ if(0)
             editor.setValue(data[0]);
             var path = location.hash.split('#'), pos = (path[2] || '').split(',');
             if (path[1] == editor.session.path)
-              editor.gotoLine(pos[0], pos[1]);
+              setTimeout(function() {editor.gotoLine(pos[0], pos[1]); }, 1000);
             else
               editor.gotoLine(0);
             editor.getSession()._signal("changeAnnotation", {}); //TODO: bug update

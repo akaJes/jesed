@@ -62,7 +62,7 @@ ace.define("ot", function(require, exports, module) {
             session.setValue(ob.str);
             session.remoteNames = ob.clients;
             cli.revision = ob.revision; // hack
-            session.disconnected = false;
+            ss.disconnected = false;
             state('online');
           });
             session.getSelection().on('changeSelection', function(e, sel){
@@ -96,7 +96,7 @@ ace.define("ot", function(require, exports, module) {
             cli.serverAck();
           });
           s.on('disconnect', function () {
-            session.disconnected = true;
+            ss.disconnected = true;
             state('offline');
           });
           s.on('selection', function (clientId, selection) {
