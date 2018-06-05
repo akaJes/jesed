@@ -28,12 +28,18 @@ function fsbrowser(ui, cb) {
     $('.jesed-grep').on('change', function() {
       var v = $(this).val();
       if (v.length > 3) {
-        $('.jesed-grepon').prop('checked', true);
+        $('.jesed-grep-on').prop('checked', true);
         grep = v;
         ui.jstree('refresh');
+        var h = $('.jesed-grep-history')
+        h.find('a').each(function(i){ ($(this).text() == v || i > 5) && $(this).remove()})
+        h.prepend('<a class="dropdown-item" href="#">' + v + '</a>');
       }
     })
-    $('.jesed-grepon').on('change', function() {
+    $('.jesed-grep-history').on('click', 'a', function() {
+      $('.jesed-grep').val($(this).text()).trigger('change');
+    })
+    $('.jesed-grep-on').on('change', function() {
       if ($(this).prop('checked'))
         $('.jesed-grep').trigger('change');
       else {

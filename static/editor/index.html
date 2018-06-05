@@ -69,9 +69,14 @@ module = {};
             <div class="input-group-prepend">
               <span class="input-group-text" id="inputGroup-sizing-sm">grep</span>
             </div>
-            <input type="text" class="form-control jesed-grep" aria-label="Small" aria-describedby="inputGroup-sizing-sm">
+            <input type="text" class="form-control jesed-grep" aria-label="Small" aria-describedby="inputGroup-sizing-sm" placeholder="4 and more">
             <div class="input-group-append">
-              <span class="input-group-text"><input type="checkbox" class="jesed-grepon" aria-label="Checkbox for following text input"></span>
+              <button class="btn dropdown-toggle" type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"></button>
+              <div class="dropdown-menu jesed-grep-history">
+              </div>
+            </div>
+            <div class="input-group-append">
+              <span class="input-group-text"><input type="checkbox" class="jesed-grep-on" aria-label="Checkbox for following text input"></span>
             </div>
           </div>
         </div>
@@ -110,6 +115,6 @@ module = {};
             </div>
           </div>
         </div>
-
+    <div class="jesed-version" style="position:fixed;bottom:0;"></div>
   </body>
 </html>

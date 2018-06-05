@@ -117,7 +117,7 @@ var state;
           var s = manager[path];
           if (!s) {
             var name = path.slice(path.lastIndexOf("/") + 1);
-            var tab = $('<li class="nav-item"><a class="nav-link" data-toggle="tab" href="#editorTab" role="tab" aria-controls="profile" aria-selected="false">'
+            var tab = $('<li class="nav-item" style="white-space: nowrap;"><a class="nav-link" data-toggle="tab" href="#editorTab" role="tab" aria-controls="profile" aria-selected="false">'
               + '<button class="close closeTab pl-2" type="button" >×</button>' + name + ' <span class="badge badge-info"></span></a></li>');
             $('ul.nav').append(tab);
             s = manager[path] = {
@@ -148,7 +148,7 @@ var state;
               syncToggleButtons(editor);
               if (s.scrollDown)
                 editor.gotoLine(Infinity);
-              $('.jesed-grepon').prop('checked') &&
+              $('.jesed-grep-on').prop('checked') &&
               ace.config.loadModule("ace/ext/searchbox", function(m) {
                 m.Search(editor);
                 var sb = editor.searchBox
@@ -312,6 +312,10 @@ $(function(){
         var editor = createEditor("editor", vars.file, vars.lang, vars.theme);
         var tree = createTree("tree", editor);
         createFileUploader(".uploader", tree, editor);
+    $.ajax('s/version')
+    .then(function(data) {
+      $('.jesed-version').text(data)
+    });
     0 &&
     $.ajax('/upnp/check')
     .then(function(data) {
