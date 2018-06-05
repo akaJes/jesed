@@ -24,17 +24,17 @@ module.exports = (server, project, tokens) => {
       var t = Object.keys(tokens).map(i => tokens[i]).filter(i => i.token == token)
       if (!t.length) return;
       user.auth || (user.auth = t[0].user);
-      socket.broadcast.emit('users', pp.users);
+      io.sockets.emit('users', pp.users);
       getDoc(io, project, docId, name)
         .then(ob => socket.emit('ns', docId, ob.type),socket.emit('users', pp.users))
         .catch(e => console.error(e))
     });
     socket.on('disconnect', function() {
       delete pp.users[socket.id];
-      socket.broadcast.emit('users', pp.users);
+      io.sockets.emit('users', pp.users);
     })
   }
-  var host = chokidar.watch('**', {
+  var host = chokidar.watch(['**', '*', '.*'], {
     cwd: path.resolve(project.path),
     ignored: ['node_modules', '.git'].concat(project.excludes),
     persistent: true,
@@ -50,11 +50,20 @@ module.exports = (server, project, tokens) => {
     })
     )
   })
+  .on('unlink', file => {
+    const docId = '/' + file;
+    const pp = ns[project.ws].docs;
+    pp[docId] && pp[docId].remove();
+    io.sockets.emit('files', 'unlink', docId);
+  })
+  .on('add', file => {
+    const docId = '/' + file;
+    io.sockets.emit('files', 'add', docId);
+  })
   return function() {
     host.close();
     io.removeListener('connection', connection);
     io.path("recycled" + new Date().getTime());
-    delete io;
   }
 }
 function canEdit(mime) {
@@ -75,9 +84,16 @@ function getDoc(io, project, docId, name) {
             throw new Error('binary format');
           const ns = docId.replace(/ /g, ':')
           const doc = new ot.EditorSocketIOServer(text.toString(), 0, ns);
-          const ob = pp[docId] = {ot: doc, type: m, id: docId};
+          const ob = pp[docId] = {ot: doc, type: m, id: docId, remove: remove, clients: []};
           io.of(ns)
-          .on('connection', function(socket) {
+          .on('connection', nsConn);
+          function remove() {
+            io.of(ns).removeAllListeners();
+            ob.clients.map(i => i())
+            delete io.nsps[ns];
+            delete pp[docId];
+          }
+          function nsConn(socket) {
             function clients(mode) {
               socket.broadcast.in(ns).emit('clients', {clients: doc.users, mode: mode});
             }
@@ -87,7 +103,7 @@ function getDoc(io, project, docId, name) {
             clients('enter');
             socket.in(ns)
             .on('doc', function() {
-              socket.emit('doc', {
+              socket.in(ns).emit('doc', {
                 str: doc.document,
                 revision: doc.operations.length,
                 clients: doc.users
@@ -107,7 +123,11 @@ function getDoc(io, project, docId, name) {
               setFile(project.path, docId, doc.document)
               .then(a => ob.freeze = false);
             });
-          })
+            ob.clients.push(function() {
+              socket.in(ns).removeAllListeners();
+              socket.in(ns).emit('disconnect');
+            })
+          }
           return ob;
         })
       }

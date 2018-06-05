@@ -78,7 +78,7 @@ var state;
             module.init(editor);
             editor.showKeyboardShortcuts();
           });
-        }, 'help');
+        }, 'Keyboard shortcuts');
         addButton('<i class="fas fa-wrench"></i>',function(e){
           ace.config.loadModule("ace/ext/settings_menu", function(module) {
               module.init(editor);
@@ -103,19 +103,20 @@ var state;
             else
             if (ob.mime.split('/')[0] == 'image')
               loadPreview(services + 'file' + ob.id);
-        };
+        }
         function loadEditor(path) {
           var s = manager[path];
           if (!s) {
             var name = path.slice(path.lastIndexOf("/") + 1);
             var tab = $('<li class="nav-item"><a class="nav-link" data-toggle="tab" href="#editorTab" role="tab" aria-controls="profile" aria-selected="false">'
-              + '<button class="close closeTab pl-2" type="button" >×</button>' + name + '</a></li>');
+              + '<button class="close closeTab pl-2" type="button" >×</button>' + name + ' <span class="badge badge-info"></span></a></li>');
             $('ul.nav').append(tab);
             s = manager[path] = {
               tab: tab,
               path: path,
               name: name,
-              session: ace.createEditSession('', 'ace/mode/' + getLangFromFilename(name)),
+              session: ace.createEditSession(''),
+              isActive: function() { return !!s.tab.find('[aria-selected=true]').length; },
             }
             s.session.path = path;
             s.session.setUseSoftTabs(true);
@@ -123,9 +124,17 @@ var state;
             //switch
             tab.find('a').on('shown.bs.tab', function(ev) {
               state.text('');
+              $(this).find('span').text('');
               editor.setSession(s.session);
               editor.setReadOnly(s.session.disconnected);
               editor.dmp && editor.dmp.scan();
+              if (s.session.getMode().id == "ace/mode/javascript") {
+                var w = s.session.$worker;
+                w && w.send("changeOptions", [{
+                  asi: true,    //supress semicolon warning
+                  maxerr: 1000, //supress Too many errors
+                }]);
+              }
               editor.focus();
               $('.jesed-grepon').prop('checked') &&
               ace.config.loadModule("ace/ext/searchbox", function(m) {
@@ -159,28 +168,6 @@ var state;
         }
         return this;
       }
-        function getLangFromFilename(filename) {
-          var lang = "text";
-          var ext = (/(?:\.([^.]+))?$/.exec(filename)[1]||'').toLowerCase();;
-          if(typeof ext !== undefined){
-            switch(ext){
-              case "txt": lang = "text"; break;
-              case "htm": lang = "html"; break;
-              case "md": lang = "markdown"; break;
-              case "js": lang = "javascript"; break;
-              case "c":case "h": lang = "c_cpp"; break;
-              case "cpp":case "hpp": lang = "c_cpp"; break;
-              case "css":
-              case "scss":
-              case "php":
-              case "html":
-              case "json":
-              case "xml":
-                lang = ext;
-            }
-          }
-          return lang;
-        }
 
       function createEditor(element, file, lang, theme, type){
         var editor = ace.edit(element);
@@ -195,12 +182,32 @@ var state;
         new MT(editor)
         require('diff');
         var OT = require("ot");
-        otI = new OT(manager, function(text) {
+        otI = new OT(manager, function(text, docId) {
           if (text == 'offline')
             editor.setReadOnly(true);
           if (text == 'online')
             editor.setReadOnly(false);
+          if (text == 'change') {
+            var ob = manager[docId];
+            if (ob && !ob.isActive())
+              ob.tab.find('span').text(parseInt(ob.tab.find('span').text() || 0) + 1)
+            return
+          }
           state.text(text)
+        });
+        otI.socket.on('files', function (type, docId) {
+          if (type == 'unlink') {
+            var ob = manager[docId];
+            if (ob) {
+              ob.session.disconnected = true;
+              if(ob.isActive()) {
+                editor.setReadOnly(true);
+                state.text('removed')
+              }
+            }
+          }
+          var p = docId.split('/').slice(0, -1).join('/') || '/';
+          $('.tree').jstree().refresh_node(p);
         });
         otI.socket.on('users', function(users) {
           var u = $('.jesed-users .dropdown-menu').empty();
@@ -268,13 +275,9 @@ if(0)
         });
         editor.loadUrl = function(file, lang, type) {
           if(typeof file === "undefined") return file = "/index.htm";
-          if(typeof lang === "undefined")
-            lang = getLangFromFilename(file);
-          if(typeof type === "undefined"){
-            type = "text/"+lang;
-            if(lang === "c_cpp") type = "text/plain";
-          }
-          if(lang !== "plain") editor.getSession().setMode("ace/mode/"+lang);
+          var modelist = ace.require("ace/ext/modelist")
+          var mode = modelist.getModeForPath(file).mode
+          editor.session.setMode(mode)
           httpGet(file);
         }
         editor.loadUrl(file, lang, type);

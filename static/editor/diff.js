@@ -76,10 +76,24 @@ ace.define("diff", function(require, exports, module) {
           session.diffDoc = val;
           this.scan();
 		}
+      var entityMap = {
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#39;',
+        '/': '&#x2F;',
+        '`': '&#x60;',
+        '=': '&#x3D;'
+      };
+      function escapeHtml (string) {
+        return String(string).replace(/[&<>"'`=\/]/g, function (s) {
+          return entityMap[s];
+        });
+      }
         function getBaseString(diffs, pos) {
-          var list = ['<b>', diffs[pos][1], '</b>'];
           function quote(what, mode) {
-            return mode == -1 ? '<b style="color:red">' + what + '</b>' : what;
+            return mode == -1 ? '<b style="color:red">' + escapeHtml(what) + '</b>' : escapeHtml(what);
           }
           function seek(dir) {
             var i = pos + dir, found, list = [];

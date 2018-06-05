@@ -119,9 +119,10 @@ ace.define("ot", function(require, exports, module) {
           }
           s.on('operation', function (clientId, operation, selection) {
             self.remoteChange = true;
+            state('change', dir);
             scan(ss); //apply undebounced
-            var operation = ot.TextOperation.fromJSON(operation);
-            cli.applyServer(operation);
+            var op = ot.TextOperation.fromJSON(operation);
+            cli.applyServer(op);
             if (selection) {
               var range = {start: selection.ranges[0].anchor, end: selection.ranges[0].head};
               setCarret(clientId, range);
@@ -148,7 +149,7 @@ ace.define("ot", function(require, exports, module) {
         }) //ns
         function remoteCaretsUpdate(session, index, length){
           var change = false;
-          for (origin in session.remoteCarets) {
+          for (var origin in session.remoteCarets) {
             session.remoteCarets[origin].cursors.filter(function(cursor) {
                 if (cursor.start >= index){
                     cursor.start += length;
@@ -161,7 +162,7 @@ ace.define("ot", function(require, exports, module) {
             })
           }
           change && session._signal('changeFrontMarker');
-        };
+        }
         this.init = function (dir, token, name) {
           socket.emit('ns', dir, token, name);
           var session = manager[dir].session;
@@ -171,7 +172,7 @@ ace.define("ot", function(require, exports, module) {
         }
         this.shut = function (dir) {
           var ss = manager[dir];
-          ss.socket.close();
+          ss.socket && ss.socket.close();
           delete ss.ot;
         }
         function scan(ss) {
@@ -180,7 +181,7 @@ ace.define("ot", function(require, exports, module) {
             var d = dmp.diff_main(session.otDoc, session.getValue());
             //dmp.diff_cleanupSemantic(d); //semantic //TODO: add mode
             dmp.diff_cleanupEfficiency(d); //efficiency
-            if (d.length == 1 && d[0][0] == 0) return;
+            if (d.length == 1 && d[0][0] === 0) return;
             var op  = new ot.TextOperation();
           d.filter(function(i) { return i[1].length; })
           .map(function(i, n, o) {
