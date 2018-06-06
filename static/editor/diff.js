@@ -10,9 +10,9 @@ ace.define("diff", function(require, exports, module) {
     dmp.Diff_Timeout = .1;
     dmp.Diff_EditCost = 10;
     var dmpMode = 0; //TODO
-
-    function DMP(editor) {
-        this.editor = editor;
+  function DMP(editor) {
+    this.editor = editor;
+    this.enabled = true;
 		var self = this;
         var dc = debounce(scan, 500, self)
 		this.onChange = function(obj, editor) {
@@ -124,7 +124,7 @@ ace.define("diff", function(require, exports, module) {
                   .filter(function(i) { return i && ['added-gutter', 'changed-gutter'].indexOf(i) < 0;})
                   .join(' ')
           });
-          if (session.diffDoc && this.editor.getValue()) {
+          if (this.enabled && session.diffDoc && this.editor.getValue()) {
           var d = dmp.diff_main(session.diffDoc, this.editor.getValue());
           //dmp.diff_cleanupSemantic(d); //semantic //TODO: add mode
           dmp.diff_cleanupEfficiency(d); //efficiency
@@ -198,10 +198,16 @@ ace.define("diff", function(require, exports, module) {
                     this.dmp = undefined;
 				}
 	    	},
+    	},
+	    enableDiff: {
+	    	set: function(val) {
+	    	  this.dmp.enabled = val;
+	    	  this.dmp.scan();
+	    	},
 	    },
 	    hasDiff: {
 	    	get: function(val) {
-					return this.dmp && self.hasDiff(self.editor);
+					return this.dmp && this.dmp.hasDiff(this.dmp.editor);
 			},
 		},
       });

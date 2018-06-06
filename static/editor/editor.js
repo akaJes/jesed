@@ -94,18 +94,19 @@ var tinySession;
         function button(name, cls, title, fn) {
           $(base).append($('<button>').addClass('btn btn-sm').addClass(cls || 'm-1').html(name).on('click', fn).attr('title', title));
         }
-        function addToggleButton(name, cls, title, fn) {
-          $(element).append($('<button type="button" class="btn btn-sm m-1" data-toggle="button" aria-pressed="false" autocomplete="off">')
-            .addClass(cls).html(name).on('click', fn).attr('title', title).attr('aria-pressed', cls.indexOf('active') >= 0));
+        function buttonToggle(name, cls, title, fn) {
+          $(base).append($('<button type="button" data-toggle="button" aria-pressed="false" autocomplete="off">').addClass('btn btn-sm')
+            .addClass(cls || 'm-1').html(name).on('click', fn).attr('title', title).attr('aria-pressed', cls.indexOf('active') >= 0));
         }
 //        addButton('Save',function(e){ editor.execCommand("saveCommand") });
-        addToggleButton('<i class="fas fa-save"></i>', 'btn-info active', 'Disable auto save', function() { otI.setAutoSave(!$(this).hasClass('active')); });
 
         var gitVersions = initGitVersion($('.jesed-gitlog-modal'), editor);
-        base = $('<div class="btn-group m-1">').appendTo(element);
-        button('<i class="fab fa-git"></i>', 'btn-info', 'Select base version', gitVersions);
+        base = $('<div class="btn-group m-1 jesed-diff">').appendTo(element);
+        button('<i class="fa fa-code-branch"></i>', 'btn-info', 'Select base version', gitVersions);
         button('<i class="fas fa-chevron-down"></i>','btn-secondary', 'Seek for next diff', function(e){ editor.execCommand("nextDiff") });
         button('<i class="fas fa-chevron-up"></i>', 'btn-secondary', 'Seek for previous diff', function(e){ editor.execCommand("prevDiff") });
+        buttonToggle('<i class="fab fa-git"></i>', 'btn-primary active', 'Enable diff', function(e){ editor.setOption("enableDiff", !$(this).hasClass('active')) });
+
         base = element;
 
         addSelectionBeautify(editor);
@@ -135,7 +136,8 @@ var tinySession;
         });
         button('<i class="fas fa-user"></i>', 'btn-secondary', 'Set Your name for collaborative editing', changeName);
         base = element;
-        addToggleButton('<i class="fas fa-file-alt"></i>','btn-info jesed-scroll','Keep scrolling down',
+        buttonToggle('<i class="fas fa-save"></i>', 'btn-info active', 'Disable auto save', function() { otI.setAutoSave(!$(this).hasClass('active')); });
+        buttonToggle('<i class="fas fa-file-alt"></i>','btn-info jesed-scroll m-1','Keep scrolling down',
           function() {
             var ob = manager[editor.session.path];
             ob.scrollDown = !ob.scrollDown;
@@ -251,13 +253,13 @@ var tinySession;
         new MT(editor)
         require('diff');
         var OT = require("ot");
-        otI = new OT(manager, function(text, docId) {
+        otI = new OT(manager, function(text, val) {
           if (text == 'offline')
             editor.setReadOnly(true);
           if (text == 'online')
             editor.setReadOnly(false);
           if (text == 'change') {
-            var ob = manager[docId];
+            var ob = manager[val];
             if (ob && !ob.isActive())
               ob.tab.find('span').text(parseInt(ob.tab.find('span').text() || 0) + 1)
             if (ob && ob.isActive() && ob.scrollDown)
@@ -268,6 +270,13 @@ var tinySession;
             if (tinySession == editor.session)
               tinyMCE.activeEditor.setContent(tinySession.getValue());
             return
+          }
+          if (text == 'cursor') {
+            var h = editor.getOption("hasDiff");
+            if (h) {
+              $('.jesed-diff .btn-secondary').eq(0).toggleClass('disabled', !h.forward);
+              $('.jesed-diff .btn-secondary').eq(1).toggleClass('disabled', !h.backward);
+            }
           }
           state.text(text)
         });

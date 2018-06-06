@@ -74,12 +74,14 @@ ace.define("ot", function(require, exports, module) {
                 var range = sel.getRange();
                 !s.connected && state('diconnected');
                 s.emit('selection', getOtSel(range));
+                state('cursor');
               }
             });
             session.getSelection().on('changeCursor', function(e, sel){
               var range = sel.getRange();
               !s.connected && state('diconnected');
               s.emit('selection', getOtSel(range));
+              state('cursor');
             });
           cli.sendOperation = function (revision, operation) {
             state('sending...')

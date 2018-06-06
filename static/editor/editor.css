@@ -1,8 +1,8 @@
 /* editor*/
 .added-gutter { background-color: rgba(0,170,0,.33); }
 .changed-gutter { background-color: rgba(170,0,0,.33); }
-.changed-text { background-color: rgba(170,0,0,.14); position:absolute; z-index:2;}
-.added-text { background-color: rgba(0,170,0,.14); position:absolute; z-index:2;}
+.changed-text { background-color: rgba(170,0,0,.1); position:absolute; z-index:2;}
+.added-text { background-color: rgba(0,170,0,.1); position:absolute; z-index:2;}
 .ace_gutter-cell { background-repeat: no-repeat; }
 /* layout */
 html, body {
@@ -28,7 +28,6 @@ html, body {
 
 .uploader {
   line-height: 28px;
-  padding-left: 10px;
   background-color: linen;
   color: green;
 }
