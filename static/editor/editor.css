@@ -91,6 +91,13 @@ html, body {
   color: #333;
 }
 
+.ellipsis {
+  max-width:0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 /*Container, container body, iframe*/
 .mce-tinymce, .mce-container-body, #code_ifr {
     *min-height: 100% !important;

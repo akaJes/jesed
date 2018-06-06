@@ -1,4 +1,4 @@
-function fsbrowser(ui, cb) {
+function fsbrowser(ui, services, cb) {
     var upload = $('<input type="file" name="data" style="display: none;">');
     var download = $('<iframe style="display:none;"></iframe>');
     var path;

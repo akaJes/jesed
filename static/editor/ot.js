@@ -12,7 +12,7 @@ ace.define("ot", function(require, exports, module) {
     dmp.Diff_EditCost = 10;
     var dmpMode = 0; //TODO
 
-    function OT(manager, state) {
+    function OT(manager, stateEd) {
         var self = this;
         this.remoteChange = 0;
         this.autoSave = true;
@@ -29,7 +29,7 @@ ace.define("ot", function(require, exports, module) {
             for(var s in manager)
               scan(manager[s]);
           else
-            state('frozen.')
+            stateEd('frozen.')
         }
         socket.on('ns', function(dir, type) {
           var ss = manager[dir];
@@ -37,6 +37,10 @@ ace.define("ot", function(require, exports, module) {
           var cli = ss.ot = new ot.Client(0);
           var session = ss.session;
           ss.dc = debounce(scan, 1000);
+          function state(val) {
+            ss.state = val;
+            stateEd(val)
+          }
           function onChange(obj) {
             if (self.remoteChange) return;
             if (!self.autoSave) return;
@@ -178,7 +182,6 @@ ace.define("ot", function(require, exports, module) {
         }
         function scan(ss) {
           var session = ss.session;
-          if (1 || session.otDoc && session.getValue()) {
             var d = dmp.diff_main(session.otDoc, session.getValue());
             //dmp.diff_cleanupSemantic(d); //semantic //TODO: add mode
             dmp.diff_cleanupEfficiency(d); //efficiency
@@ -198,8 +201,7 @@ ace.define("ot", function(require, exports, module) {
           }); //d
             ss.ot.applyClient(op);
             session.otDoc = session.getValue();
-            state('changed');
-          }
+            stateEd(ss.state = 'changed');
         }
     }
     return OT

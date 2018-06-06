@@ -15,6 +15,7 @@
     <link  href="../nm/bootstrap/dist/css/bootstrap.min.css" rel="stylesheet">
     <link  href="../nm/@fortawesome/fontawesome-free-webfonts/css/fontawesome.css" rel="stylesheet">
     <link  href="../nm/@fortawesome/fontawesome-free-webfonts/css/fa-solid.css" rel="stylesheet">
+    <link  href="../nm/@fortawesome/fontawesome-free-webfonts/css/fa-brands.css" rel="stylesheet">
 <!--<script src="/nm/tether/dist/js/tether.min.js"></script>-->
     <script src="../nm/popper.js/dist/umd/popper.min.js"></script>
     <script src="../nm/bootstrap/dist/js/bootstrap.min.js"></script>
@@ -122,6 +123,30 @@ module = {};
             </div>
           </div>
         </div>
+
+        <div class="modal fade jesed-gitlog-modal" tabindex="-1" role="dialog" aria-labelledby="gitlogModalLabel" aria-hidden="true" >
+          <div class="modal-dialog modal-lg" role="document">
+            <div class="modal-content">
+              <div class="modal-header">
+                <h4 class="modal-title" id="gitlogModalLabel">List revision of file <span></span></h4>
+                  <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                  </button>
+              </div>
+              <div class="modal-body">
+                <table border="0" class="table table-hover table-sm" style="width: 100%;table-layout: fixed;"><!-- magic here ;)-->
+                  <thead><td>Date</td><td>Author</td><td style="width:50%;">Message</td></thead>
+                  <tbody></tbody>
+                </table>
+              </div>
+              <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary">Choose</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
     <div class="jesed-version" style="position:fixed;bottom:0;"></div>
   </body>
 </html>

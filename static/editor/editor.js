@@ -10,9 +10,8 @@ $(function(){
 })
 var otI;
 var state;
-var tiny;
 var tinySession;
-      function createFileUploader(element, tree, editor) {
+      function createToolbar(element, tree, editor) {
         function addButton(name, fn, title) {
           $(element).append($('<button>').addClass('btn btn-sm m-1').html(name).on('click', fn).attr('title', title));
         }
@@ -25,6 +24,39 @@ var tinySession;
           function() {
             otI.setAutoSave(!$(this).hasClass('active'));
           });
+
+        var ui = $('.jesed-gitlog-modal');
+        addButton('<i class="fab fa-git"></i>', function(e) {
+          $.get({url: services + 'git' + editor.session.path, data: {list: 1}})
+          .then(function(data) {
+            var b = ui.find('tbody').empty();
+            function td(val) { return ['<td class="ellipsis" title="', val, '">', val, '</td>'].join('') }
+            data.all.map(function(i) {
+              b.append(['<tr hash="', i.hash, '">', td(i.date), td(i.author_name), td(i.message), '</tr>'].join(''))
+            })
+            $('.jesed-gitlog-modal').modal()
+          });
+        }, 'select base version');
+        ui.find('button.btn-primary').on('click', function(ev) {
+          var row = ui.find('.table-success');
+          if(row.length) {
+            var branch = row.attr('hash');
+            console.log(branch);
+            $.get({url: services + 'git' + editor.session.path, data: {branch: branch}})
+            .catch(function() { return [' ']})
+            .then(function(dataGit) {
+              delete editor.$setBaseText; //TODO: set option to session
+              editor.setOptions({setBaseText: dataGit})
+              editor.getSession()._signal("changeAnnotation", {}); //TODO: bug update
+              ui.modal('hide');
+            });
+          }
+        });
+        ui.find('table tbody').on('click',function(ev){
+          $(this).find('tr').removeClass('table-success');
+          $(ev.target).parents('tr').addClass('table-success')
+        });
+
         addButton('<i class="fas fa-chevron-down"></i>',function(e){ editor.execCommand("nextDiff") }, 'seek for next diff');
         addButton('<i class="fas fa-chevron-up"></i>',function(e){ editor.execCommand("prevDiff") }, 'seek for previous diff');
         addButton('<i class="fas fa-code"></i>', function(e) { editor.execCommand("beautify"); }, 'beautify JS code');
@@ -93,12 +125,12 @@ var tinySession;
             ob.scrollDown = !ob.scrollDown;
           });
         //0&&
-        addButton('<i class="fas fa-code"></i>', function(e) {
+        addButton('<i class="fas fa-font"></i>', function(e) {
           tinySession = editor.session;
           tinyMCE.activeEditor.setContent(tinySession.getValue());
           $("#tinymce-tab").tab('show');
           //$("#summernote").summernote('code', editor.getValue());
-        }, 'rich');
+        }, 'richtext edit(be carefull!)');
         $(element).append(state = $(' <span class="m-1">Loading...</span>'));
       }
       function syncToggleButtons(editor) {
@@ -108,7 +140,7 @@ var tinySession;
       }
       var manager = {};     // {path, tab, name, session}
       function createTree(element, editor) {
-        fsbrowser($('.tree'), loadFile)
+        fsbrowser($('.tree'), services, loadFile)
         function canEdit(mime) {
           var m = mime.split('/');
           return  m[0] == 'text' || m[0] == 'application' 
@@ -141,7 +173,7 @@ var tinySession;
             s.session.setTabSize(2);
             //switch
             tab.find('a').on('shown.bs.tab', function(ev) {
-              state.text('');
+              state.text(s.state || '');
               $(this).find('span').text('');
               editor.setSession(s.session);
               editor.setReadOnly(s.disconnected);
@@ -273,7 +305,7 @@ var tinySession;
           });
         }
         function httpGet(theUrl) {
-          $.when(0 && $.get(services + 'file' + theUrl), $.get(services + 'git' + theUrl, otI.init(theUrl, token, myName)).catch(function(){ return [' ']}))
+          $.when(0 && $.get(services + 'file' + theUrl), $.get(services + 'git' + theUrl).catch(function(){ return [' ']}), otI.init(theUrl, token, myName))
           .then(function(data, dataGit){
             delete editor.$setBaseText; //TODO: set option to session
             editor.setOptions({setBaseText: dataGit[0] })
@@ -325,19 +357,20 @@ $(function(){
         var parts = window.location.href.replace(/[?&]+([^=&]+)=([^&]*)/gi, function(m,key,value) { vars[key] = value; });
         var editor = createEditor("editor", vars.file, vars.lang, vars.theme);
         var tree = createTree("tree", editor);
-        createFileUploader(".uploader", tree, editor);
+    createToolbar(".uploader", tree, editor);
     $.ajax('s/version')
     .then(function(data) {
       $('.jesed-version').text(data)
     });
-    //if(0)
-    tiny = tinymce.init({
+
+    var tinyDB = debounce(function (ed) {
+      tinySession && tinySession.doc.setValue(ed.getContent());
+    }, 1000);
+    tinymce.init({
         selector: "#tinymce",
         theme: "modern",
-//        width: 500,
-        height: "100%",
+        height: '100%',
         plugins: [
-//            "advcode",
             "advlist autolink link image lists charmap print preview hr anchor pagebreak spellchecker",
             "searchreplace wordcount visualblocks visualchars code fullscreen insertdatetime media nonbreaking",
             "save table contextmenu directionality emoticons template paste textcolor"
@@ -355,10 +388,7 @@ $(function(){
         ],
         setup: function(ed) {
           ed.on('change', function(e) {
-            //alert('keyup occured');
-            console.log('init event', e);
-            //console.log('Editor contents was modified. Contents: ' + editor.getContent());
-            tinySession && tinySession.setValue(ed.getContent())
+            tinyDB(ed);
           });
         },
     });

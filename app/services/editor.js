@@ -124,9 +124,9 @@ router.post('/upload/*', function(req, res) {
 });
 
 router.get('/git/*', function(req, res) {
-  const p = safePath(req.url.slice(5));
+  const p = safePath(req.url.slice(5).split('?')[0]);
   const data = getRoot(req)
-  .then(root => git.Tag(root).then(tag => git.Show(root, tag, p)))
+  .then(root => 'list' in req.query ? git.log(root, p): git.tag(root).then(tag => git.show(root, req.query.branch || tag, p)))
   .catch(a => '')
   send(data, res);
 })

@@ -11,6 +11,8 @@ const gitRoot = (dir) =>
   .then(str => (console.log('[gitRoot]', str), root = str))
   .catch(mst => {console.error('no root'); throw mst; });
 
-exports.Tag = (root) => promisify(git(root).raw, git(root))(['describe', '--all']).then(getFirst)
+exports.tag = (root) => promisify(git(root).raw, git(root))(['describe', '--all']).then(getFirst)
 
-exports.Show = (root, branch, file) => promisify(git(root).show, git(root))([branch + ':' + file.replace(/\\/g, '/')]);
+exports.show = (root, branch, file) => promisify(git(root).show, git(root))([branch + ':' + file.replace(/\\/g, '/')]);
+
+exports.log = (root, file) => promisify(git(root).log, git(root))([file.replace(/\\/g, '/')]);
