@@ -11,39 +11,30 @@ $(function(){
 var otI;
 var state;
 var tinySession;
-      function createToolbar(element, tree, editor) {
-        function addButton(name, fn, title) {
-          $(element).append($('<button>').addClass('btn btn-sm m-1').html(name).on('click', fn).attr('title', title));
-        }
-        function addToggleButton(name, cls, title, fn) {
-          $(element).append($('<button type="button" class="btn btn-sm m-1" data-toggle="button" aria-pressed="false" autocomplete="off">')
-            .addClass(cls).html(name).on('click', fn).attr('title', title).attr('aria-pressed', cls.indexOf('active') >= 0));
-        }
-//        addButton('Save',function(e){ editor.execCommand("saveCommand") });
-        addToggleButton('<i class="fas fa-save"></i>','btn-info active','disable auto save',
-          function() {
-            otI.setAutoSave(!$(this).hasClass('active'));
-          });
-
-        var ui = $('.jesed-gitlog-modal');
-        addButton('<i class="fab fa-git"></i>', function(e) {
-          $.get({url: services + 'git' + editor.session.path, data: {list: 1}})
-          .then(function(data) {
-            var b = ui.find('tbody').empty();
-            function td(val) { return ['<td class="ellipsis" title="', val, '">', val, '</td>'].join('') }
-            data.all.map(function(i) {
-              b.append(['<tr hash="', i.hash, '">', td(i.date), td(i.author_name), td(i.message), '</tr>'].join(''))
+      function changeName() {
+          if(isElectron()) {
+            var d = vex.dialog.prompt({
+              message: 'Tell Ur Name!!!',
+              placeholder: 'name',
+              callback: function (value) {
+                if(value)
+                  otI.setName(myName = value);
+              }
             })
-            $('.jesed-gitlog-modal').modal()
-          });
-        }, 'select base version');
+            $(d.contentEl).find('input').val(myName);
+          } else {
+            var value = prompt('Tell Ur Name!!!', myName);
+            if(value)
+              otI.setName(myName = value);
+          }
+      }
+      function initGitVersion(ui, editor) {
         ui.find('button.btn-primary').on('click', function(ev) {
           var row = ui.find('.table-success');
           if(row.length) {
             var branch = row.attr('hash');
-            console.log(branch);
             $.get({url: services + 'git' + editor.session.path, data: {branch: branch}})
-            .catch(function() { return [' ']})
+            .catch(function() { return ' '})
             .then(function(dataGit) {
               delete editor.$setBaseText; //TODO: set option to session
               editor.setOptions({setBaseText: dataGit})
@@ -52,14 +43,24 @@ var tinySession;
             });
           }
         });
-        ui.find('table tbody').on('click',function(ev){
+        ui.find('table tbody').on('click',function(ev) {
           $(this).find('tr').removeClass('table-success');
           $(ev.target).parents('tr').addClass('table-success')
         });
-
-        addButton('<i class="fas fa-chevron-down"></i>',function(e){ editor.execCommand("nextDiff") }, 'seek for next diff');
-        addButton('<i class="fas fa-chevron-up"></i>',function(e){ editor.execCommand("prevDiff") }, 'seek for previous diff');
-        addButton('<i class="fas fa-code"></i>', function(e) { editor.execCommand("beautify"); }, 'beautify JS code');
+        function open() {
+          $.get({url: services + 'git' + editor.session.path, data: {list: 1}})
+          .then(function(data) {
+            var b = ui.find('tbody').empty();
+            function td(val) { return ['<td class="ellipsis" title="', val, '">', val, '</td>'].join('') }
+            data.all.map(function(i) {
+              b.append(['<tr hash="', i.hash, '">', td(i.date), td(i.author_name), td(i.message), '</tr>'].join(''))
+            })
+            ui.modal()
+          });
+        }
+        return open;
+      }
+      function addSelectionBeautify(editor) {
         function beautify(editor) {
           if (!editor.getSelectedText()) return;
           var beautify = ace.require("ace/ext/beautify"); // get reference to extension
@@ -87,50 +88,58 @@ var tinySession;
 	        bindKey: {win: "Ctrl-Alt-f", mac: "Command-Alt-f"}
 		    };
 	      editor.commands.addCommand(beautifyCmd);
+      }
+      function createToolbar(element, tree, editor) {
+        var base = element;
+        function button(name, cls, title, fn) {
+          $(base).append($('<button>').addClass('btn btn-sm').addClass(cls || 'm-1').html(name).on('click', fn).attr('title', title));
+        }
+        function addToggleButton(name, cls, title, fn) {
+          $(element).append($('<button type="button" class="btn btn-sm m-1" data-toggle="button" aria-pressed="false" autocomplete="off">')
+            .addClass(cls).html(name).on('click', fn).attr('title', title).attr('aria-pressed', cls.indexOf('active') >= 0));
+        }
+//        addButton('Save',function(e){ editor.execCommand("saveCommand") });
+        addToggleButton('<i class="fas fa-save"></i>', 'btn-info active', 'Disable auto save', function() { otI.setAutoSave(!$(this).hasClass('active')); });
 
-        myName ||
-        addButton('<i class="fas fa-user"></i>',function(e){
-          if(isElectron()) {
-            var d = vex.dialog.prompt({
-              message: 'Tell Ur Name!!!',
-              placeholder: 'name',
-              callback: function (value) {
-                if(value)
-                  otI.setName(myName = value);
-              }
-            })
-            $(d.contentEl).find('input').val(myName);
-          } else {
-            var value = prompt('Tell Ur Name!!!', myName);
-            if(value)
-              otI.setName(myName = value);
-          }
-        }, 'set Your name for collaborative editing');
-        addButton('<i class="fas fa-undo"></i>',function(e){ editor.getSession().getUndoManager().undo(false); }, 'undo');
-        addButton('<i class="fas fa-keyboard"></i>',function(e){
+        var gitVersions = initGitVersion($('.jesed-gitlog-modal'), editor);
+        base = $('<div class="btn-group m-1">').appendTo(element);
+        button('<i class="fab fa-git"></i>', 'btn-info', 'Select base version', gitVersions);
+        button('<i class="fas fa-chevron-down"></i>','btn-secondary', 'Seek for next diff', function(e){ editor.execCommand("nextDiff") });
+        button('<i class="fas fa-chevron-up"></i>', 'btn-secondary', 'Seek for previous diff', function(e){ editor.execCommand("prevDiff") });
+        base = element;
+
+        addSelectionBeautify(editor);
+        button('<i class="fas fa-code"></i>', '', 'Beautify selected JS code', function(e) { editor.execCommand("beautify"); });
+        $("#tinymce-tab").find('button').on('click', function(){
+          $(this).parents('li').hide()
+          $('#preview-tab').tab('show')
+        });
+        button('<i class="fas fa-font"></i>', 'btn-primary', 'RichText HTML edit (be carefull with plain text !!!)', function(e) {
+          tinySession = editor.session;
+          tinyMCE.activeEditor.setContent(tinySession.getValue());
+          $("#tinymce-tab").tab('show').parent().show();
+        });
+        button('<i class="fas fa-undo"></i>', '', 'Undo', function(e){ editor.getSession().getUndoManager().undo(false); });
+        base = $('<div class="btn-group m-1">').appendTo(element);
+        button('<i class="fas fa-keyboard"></i>', 'btn-light', 'Keyboard shortcuts', function(e) {
           ace.config.loadModule("ace/ext/keybinding_menu", function(module) {
             module.init(editor);
             editor.showKeyboardShortcuts();
           });
-        }, 'Keyboard shortcuts');
-        addButton('<i class="fas fa-wrench"></i>',function(e){
+        });
+        button('<i class="fas fa-wrench"></i>', 'btn-light', 'Editor options', function(e) {
           ace.config.loadModule("ace/ext/settings_menu", function(module) {
               module.init(editor);
               editor.showSettingsMenu();
           });
-        }, 'options');
-        addToggleButton('<i class="fas fa-file-alt"></i>','btn-info jesed-scroll','keep scrolling down',
+        });
+        button('<i class="fas fa-user"></i>', 'btn-secondary', 'Set Your name for collaborative editing', changeName);
+        base = element;
+        addToggleButton('<i class="fas fa-file-alt"></i>','btn-info jesed-scroll','Keep scrolling down',
           function() {
             var ob = manager[editor.session.path];
             ob.scrollDown = !ob.scrollDown;
           });
-        //0&&
-        addButton('<i class="fas fa-font"></i>', function(e) {
-          tinySession = editor.session;
-          tinyMCE.activeEditor.setContent(tinySession.getValue());
-          $("#tinymce-tab").tab('show');
-          //$("#summernote").summernote('code', editor.getValue());
-        }, 'richtext edit(be carefull!)');
         $(element).append(state = $(' <span class="m-1">Loading...</span>'));
       }
       function syncToggleButtons(editor) {
