@@ -145,6 +145,7 @@ ace.define("ot", function(require, exports, module) {
                 }
               });
               session.otDoc = session.getValue();
+              state('changed');
           }
         }) //ns
         function remoteCaretsUpdate(session, index, length){
@@ -197,6 +198,7 @@ ace.define("ot", function(require, exports, module) {
           }); //d
             ss.ot.applyClient(op);
             session.otDoc = session.getValue();
+            state('changed');
           }
         }
     }

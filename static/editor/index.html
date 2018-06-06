@@ -9,6 +9,7 @@
     <script src="../nm/ace-builds/src-min/ext-beautify.js"></script>
     <script src="../nm/ace-builds/src-min/ext-language_tools.js" ></script>
     <script src="../nm/ace-builds/src-min/ext-modelist.js" ></script>
+    <script src="../nm/tinymce/tinymce.min.js" ></script>
     <script src="../nm/jstree/dist/jstree.js"></script>
 
     <link  href="../nm/bootstrap/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -48,7 +49,7 @@ module = {};
       <button class="btn btn-sm dropdown-toggle" type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
         <i class="fas fa-users"></i> <span>0</span>
       </button>
-      <div class="dropdown-menu">
+      <div class="dropdown-menu dropdown-menu-right">
         <div class="dropdown-divider"></div>
       </div>
     </div>
@@ -56,6 +57,9 @@ module = {};
     <ul class="nav nav-tabs nav-scroll" id="myTab" role="tablist" style="margin-left: 75px;">
       <li class="nav-item">
         <a class="nav-link active" id="preview-tab" data-toggle="tab" href="#previewTab" role="tab" aria-controls="home" aria-selected="true">Preview</a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link" id="tinymce-tab" data-toggle="tab" href="#tinymceTab" role="tab" aria-controls="home" aria-selected="true">Rich</a>
       </li>
     </ul>
   </div>
@@ -72,7 +76,7 @@ module = {};
             <input type="text" class="form-control jesed-grep" aria-label="Small" aria-describedby="inputGroup-sizing-sm" placeholder="4 and more">
             <div class="input-group-append">
               <button class="btn dropdown-toggle" type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"></button>
-              <div class="dropdown-menu jesed-grep-history">
+              <div class="dropdown-menu dropdown-menu-right jesed-grep-history">
               </div>
             </div>
             <div class="input-group-append">
@@ -86,6 +90,9 @@ module = {};
     </div>
       <div class="tab-content w-100" id="myTabContent">
         <div id="previewTab" class="tab-pane fade show active h-100" role="tabpanel" aria-labelledby="preview-tab">
+        </div>
+        <div id="tinymceTab" class="tab-pane fade show h-100" style="overflow: hidden;" role="tabpanel" aria-labelledby="tinymca-tab">
+          <textarea id="tinymce" style0="width:100%;height:100%;"></textarea>
         </div>
         <div id="editorTab" class="tab-pane fade h-100" role="tabpanel" aria-labelledby="editor-tab">
           <div class="stickit top">

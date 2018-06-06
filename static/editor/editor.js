@@ -10,6 +10,8 @@ $(function(){
 })
 var otI;
 var state;
+var tiny;
+var tinySession;
       function createFileUploader(element, tree, editor) {
         function addButton(name, fn, title) {
           $(element).append($('<button>').addClass('btn btn-sm m-1').html(name).on('click', fn).attr('title', title));
@@ -90,6 +92,13 @@ var state;
             var ob = manager[editor.session.path];
             ob.scrollDown = !ob.scrollDown;
           });
+        //0&&
+        addButton('<i class="fas fa-code"></i>', function(e) {
+          tinySession = editor.session;
+          tinyMCE.activeEditor.setContent(tinySession.getValue());
+          $("#tinymce-tab").tab('show');
+          //$("#summernote").summernote('code', editor.getValue());
+        }, 'rich');
         $(element).append(state = $(' <span class="m-1">Loading...</span>'));
       }
       function syncToggleButtons(editor) {
@@ -214,6 +223,11 @@ var state;
                 editor.gotoLine(Infinity);
             return
           }
+          if (text == 'changed') {
+            if (tinySession == editor.session)
+              tinyMCE.activeEditor.setContent(tinySession.getValue());
+            return
+          }
           state.text(text)
         });
         otI.socket.on('files', function (type, docId) {
@@ -315,6 +329,38 @@ $(function(){
     $.ajax('s/version')
     .then(function(data) {
       $('.jesed-version').text(data)
+    });
+    //if(0)
+    tiny = tinymce.init({
+        selector: "#tinymce",
+        theme: "modern",
+//        width: 500,
+        height: "100%",
+        plugins: [
+//            "advcode",
+            "advlist autolink link image lists charmap print preview hr anchor pagebreak spellchecker",
+            "searchreplace wordcount visualblocks visualchars code fullscreen insertdatetime media nonbreaking",
+            "save table contextmenu directionality emoticons template paste textcolor"
+       ],
+//       content_css: "css/content.css",
+       toolbar: "insertfile undo redo | styleselect | bold italic | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | link image | print preview media fullpage | forecolor backcolor emoticons | code", 
+       style_formats: [
+            {title: 'Bold text', inline: 'b'},
+            {title: 'Red text', inline: 'span', styles: {color: '#ff0000'}},
+            {title: 'Red header', block: 'h1', styles: {color: '#ff0000'}},
+            {title: 'Example 1', inline: 'span', classes: 'example1'},
+            {title: 'Example 2', inline: 'span', classes: 'example2'},
+            {title: 'Table styles'},
+            {title: 'Table row 1', selector: 'tr', classes: 'tablerow1'}
+        ],
+        setup: function(ed) {
+          ed.on('change', function(e) {
+            //alert('keyup occured');
+            console.log('init event', e);
+            //console.log('Editor contents was modified. Contents: ' + editor.getContent());
+            tinySession && tinySession.setValue(ed.getContent())
+          });
+        },
     });
     0 &&
     $.ajax('/upnp/check')
