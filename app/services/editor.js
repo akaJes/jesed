@@ -60,24 +60,32 @@ const checkChange = (files, dir, name) => {
   return files.filter(i => i.slice(0, file.length) == file).length;
 }
 const findInFile = (file, val) => promisify(fs.readFile)(file).then(text => new RegExp(val).test(text));
-const regexpFolder = (root, val) =>
-  walk(root).then(list => Promise.all(list
-    .filter(i => excludes.indexOf(i) < 0)
-    .map(i => mime(i)
-      .then(m => m.editable && findInFile(i, val))
-      .then(a => a && path.relative(root, i))
-      .catch(e => 0)
-    ))
-  .then(list => list.filter(i => i)))
+
+const inList = (a, ex) => ex.filter(i => a.startsWith(i)).length
+const regexpFolder = (root, val, excludes) =>
+  walk(root)
+  .then(list => list.filter(i => !inList(i, excludes)))
+  .then(list => list.chunk(Math.ceil(list.length / 50)))
+  .then(list => Promise.all(list
+    .map(l =>
+    l.reduce((c, f) =>
+      c.then(ar => mime(f)
+        .then(m => m.editable && findInFile(f, val))
+        .then(a => a && ar.concat(path.relative(root, f)) || ar)
+        .catch(e => ar)
+        )
+    , Promise.resolve([]))))
+  .then(list => list.reduce((a, i) => a.concat(i), [])))
+
 router.get('/tree', function(req, res) {
   var dir = safePath(req.query.id);
   dir = dir == '#' && '/' || dir;
-  excludes = ['.', '..', '.htdigest', 'projects.json'].concat(req.project.excludes || [ '.git', 'node_modules']);
+  var excludes = ['..', '.htdigest', 'projects.json'].concat(req.project.excludes || [ '.git', 'node_modules']);
   const data = getRoot(req)
   .then(root => Promise.all([
-      promisify(fs.readdir)(path.join(root, dir)).then(list => list.filter(name => name && excludes.indexOf(name) < 0)),
+      promisify(fs.readdir)(path.join(root, dir)).then(list => list.filter(name => !inList(name, excludes))),
       promisify(sgit(root).status, sgit(root))(),
-      'g' in req.query && regexpFolder(path.join(root, dir), req.query.g).then(list => list.map(i => path.join(dir, i).slice(1))),
+      'g' in req.query && regexpFolder(path.join(root, dir), req.query.g, excludes).then(list => list.map(i => path.join(dir, i).slice(1))),
     ])
     .then(p => Promise.all(p[0].map(name =>
       mime(path.join(root, dir, name))

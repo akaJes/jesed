@@ -33,3 +33,5 @@ open in your browser http://your-domain/jesed/ link
 #### Troubleshooting
 * for `ENOSPC` error - extend max watches amount
 `echo fs.inotify.max_user_watches=524288 | sudo tee -a /etc/sysctl.conf && sudo sysctl -p`
+* for `EMFILE` error - extend max watches amount
+`echo fs.file-max=10240 | sudo tee -a /etc/sysctl.conf && sudo sysctl -p`

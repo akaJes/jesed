@@ -31,10 +31,17 @@ function fsbrowser(ui, services, cb) {
         $('.jesed-grep-on').prop('checked', true);
         grep = v;
         ui.jstree('refresh');
+        addHistory(v);
+      }
+    })
+    function addHistory(v) {
         var h = $('.jesed-grep-history')
         h.find('a').each(function(i){ ($(this).text() == v || i > 5) && $(this).remove()})
         h.prepend('<a class="dropdown-item" href="#">' + v + '</a>');
-      }
+        store('grep','history', h.find('a').map(function(i){ return $(this).text() }).get())
+    }
+    (store('grep','history') || []).map(function(v) {
+      addHistory(v);
     })
     $('.jesed-grep-history').on('click', 'a', function() {
       $('.jesed-grep').val($(this).text()).trigger('change');

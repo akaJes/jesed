@@ -11,6 +11,14 @@ $(function(){
 var otI;
 var state;
 var tinySession;
+      function store(name, id, val) {
+        var s = JSON.parse(localStorage.getItem(location.pathname) || '{}')
+        s[name] || (s[name] = {})
+        if (val == undefined)
+          return s[name][id]
+        s[name][id] = val;
+        localStorage.setItem(location.pathname, JSON.stringify(s));
+      }
       function changeName() {
           if(isElectron()) {
             var d = vex.dialog.prompt({
@@ -142,6 +150,13 @@ var tinySession;
             var ob = manager[editor.session.path];
             ob.scrollDown = !ob.scrollDown;
           });
+        button('<i class="fas fa-window-restore"></i>', 'btn-light', 'Set preview URL', function(e) {
+          var frameURL = store('frame', 'url');
+          frameURL = prompt('Insert here url for preview', frameURL);
+          store('frame', 'url', frameURL);
+          $('.frame-iframe').attr('src', frameURL);
+          $('.frame-wrap').toggle(!!frameURL)
+        });
         $(element).append(state = $(' <span class="m-1">Loading...</span>'));
       }
       function syncToggleButtons(editor) {
@@ -272,11 +287,14 @@ var tinySession;
             return
           }
           if (text == 'cursor') {
+            manager[val].loaded &&
+            store('positions', val, editor.getCursorPosition());
             var h = editor.getOption("hasDiff");
             if (h) {
               $('.jesed-diff .btn-secondary').eq(0).toggleClass('disabled', !h.forward);
               $('.jesed-diff .btn-secondary').eq(1).toggleClass('disabled', !h.backward);
             }
+            return
           }
           state.text(text)
         });
@@ -329,11 +347,14 @@ var tinySession;
             editor.setOptions({setBaseText: dataGit[0] })
 if(0)
             editor.setValue(data[0]);
+            manager[theUrl].loaded = 1;
             var path = location.hash.split('#'), pos = (path[2] || '').split(',');
             if (path[1] == editor.session.path)
               setTimeout(function() {editor.gotoLine(pos[0], pos[1]); }, 1000);
-            else
-              editor.gotoLine(0);
+            else {
+              var p = store('positions', theUrl);
+              p && setTimeout(function() {editor.gotoLine(p.row + 1, p.column); }, 1000) || editor.gotoLine(0);
+            }
             editor.getSession()._signal("changeAnnotation", {}); //TODO: bug update
             state.text('opened!');
           },function(data){
@@ -410,6 +431,9 @@ $(function(){
           });
         },
     });
+    $('.frame-reload').on('mouseenter', function() {
+      $('.frame-iframe')[0].src += ''
+    })
     0 &&
     $.ajax('/upnp/check')
     .then(function(data) {

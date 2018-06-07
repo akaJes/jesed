@@ -37,9 +37,9 @@ ace.define("ot", function(require, exports, module) {
           var cli = ss.ot = new ot.Client(0);
           var session = ss.session;
           ss.dc = debounce(scan, 1000);
-          function state(val) {
-            ss.state = val;
-            stateEd(val)
+          function state(id, val) {
+            ss.state = id;
+            stateEd(id, val)
           }
           function onChange(obj) {
             if (self.remoteChange) return;
@@ -74,14 +74,13 @@ ace.define("ot", function(require, exports, module) {
                 var range = sel.getRange();
                 !s.connected && state('diconnected');
                 s.emit('selection', getOtSel(range));
-                state('cursor');
               }
             });
             session.getSelection().on('changeCursor', function(e, sel){
               var range = sel.getRange();
               !s.connected && state('diconnected');
               s.emit('selection', getOtSel(range));
-              state('cursor');
+              state('cursor', dir);
             });
           cli.sendOperation = function (revision, operation) {
             state('sending...')

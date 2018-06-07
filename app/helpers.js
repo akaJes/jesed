@@ -9,6 +9,19 @@ const promisify = (func, that) => (...args) =>
 
 const flatten = arr => arr.reduce((a, i) => a.concat(Array.isArray(i) ? flatten(i) : i), []);
 
+Array.prototype.chunk ||
+Object.defineProperty(Array.prototype, 'chunk', {
+    value: function(chunkSize){
+        if (!chunkSize)
+          return [this];
+        var temporal = [];
+        for (var i = 0; i < this.length; i += chunkSize){
+            temporal.push(this.slice(i, i + chunkSize));
+        }
+        return temporal;
+    }
+});
+
 const getAllFiles = (dir, deep = 999) =>
   promisify(fs.readdir)(dir)
   .then(list => Promise.all(
